@@ -1,9 +1,21 @@
 import 'package:flutter/material.dart';
 import '../models/task_model.dart';
 import '../utils/form_validators.dart';
+import 'common/enfoque_app_bar.dart';
+import '../screens/active_session_screen.dart';
 
 class TaskFormScreen extends StatefulWidget {
-  const TaskFormScreen({super.key});
+  /// Si es `false`, la barra inferior la dibuja el contenedor principal (MainShell).
+  final bool showBottomNav;
+
+  /// Acción al presionar el avatar del encabezado (abrir el perfil).
+  final VoidCallback? onOpenProfile;
+
+  const TaskFormScreen({
+    super.key,
+    this.showBottomNav = true,
+    this.onOpenProfile,
+  });
 
   @override
   State<TaskFormScreen> createState() => _TaskFormScreenState();
@@ -27,10 +39,22 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
 
   // Lista de apps distractoras disponibles
   final List<BlockedAppItem> _availableApps = [
-    BlockedAppItem(name: 'Instagram', packageName: 'com.instagram.android', isBlocked: true),
-    BlockedAppItem(name: 'TikTok', packageName: 'com.zhiliaoapp.musically', isBlocked: true),
-    BlockedAppItem(name: 'Twitter / X', packageName: 'com.twitter.android', isBlocked: true),
-    BlockedAppItem(name: 'YouTube', packageName: 'com.google.android.youtube', isBlocked: true),
+    BlockedAppItem(
+        name: 'Instagram',
+        packageName: 'com.instagram.android',
+        isBlocked: true),
+    BlockedAppItem(
+        name: 'TikTok',
+        packageName: 'com.zhiliaoapp.musically',
+        isBlocked: true),
+    BlockedAppItem(
+        name: 'Twitter / X',
+        packageName: 'com.twitter.android',
+        isBlocked: true),
+    BlockedAppItem(
+        name: 'YouTube',
+        packageName: 'com.google.android.youtube',
+        isBlocked: true),
   ];
 
   // Presets rápidos de duración
@@ -43,9 +67,11 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
   @override
   void initState() {
     super.initState();
-    _titleController = TextEditingController(text: 'Finalizar informe de métricas Q2');
+    _titleController =
+        TextEditingController(text: 'Finalizar informe de métricas Q2');
     _goalController = TextEditingController(
-      text: 'Completar el análisis de retención de usuarios y redactar las 3 conclusiones clave.',
+      text:
+          'Completar el análisis de retención de usuarios y redactar las 3 conclusiones clave.',
     );
     _durationController = TextEditingController(text: '45');
 
@@ -119,7 +145,8 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
           ),
           backgroundColor: const Color(0xFFBA1A1A),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           duration: const Duration(seconds: 4),
         ),
       );
@@ -138,7 +165,15 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
       blockedApps: _selectedAppNames,
     );
 
-    _showSuccessDialog(task, startFocusMode: startFocusMode);
+    // "Guardar e Iniciar Enfoque" abre directamente la Sesión Activa;
+    // "Solo Guardar en Lista" muestra el resumen de la tarea guardada.
+    if (startFocusMode) {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => ActiveSessionScreen(task: task)),
+      );
+    } else {
+      _showSuccessDialog(task, startFocusMode: false);
+    }
   }
 
   // Muestra diálogo modal con los datos guardados de forma 100% offline
@@ -175,7 +210,8 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                     color: const Color(0xFFE8F5E9),
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: const Icon(Icons.check_circle, color: Color(0xFF2E7D32), size: 32),
+                  child: const Icon(Icons.check_circle,
+                      color: Color(0xFF2E7D32), size: 32),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -184,13 +220,15 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                     children: [
                       const Text(
                         '¡Tarea Guardada Localmente!',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       Text(
                         startFocusMode
-                          ? 'Iniciando sesión de enfoque de ${task.durationMinutes} min...'
-                          : 'Almacenada con éxito en la lista offline',
-                        style: TextStyle(color: Colors.grey.shade700, fontSize: 13),
+                            ? 'Iniciando sesión de enfoque de ${task.durationMinutes} min...'
+                            : 'Almacenada con éxito en la lista offline',
+                        style: TextStyle(
+                            color: Colors.grey.shade700, fontSize: 13),
                       ),
                     ],
                   ),
@@ -204,7 +242,8 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
             _buildSummaryRow('Objetivo', task.goal),
             _buildSummaryRow('Duración', '${task.durationMinutes} minutos'),
             _buildSummaryRow('Prioridad', task.priority),
-            _buildSummaryRow('Etiquetas', task.tags.map((t) => '#$t').join(', ')),
+            _buildSummaryRow(
+                'Etiquetas', task.tags.map((t) => '#$t').join(', ')),
             _buildSummaryRow(
               'Bloqueo',
               task.blockDistractions
@@ -220,9 +259,12 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF3227C9),
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
                 ),
-                child: const Text('Entendido', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                child: const Text('Entendido',
+                    style:
+                        TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ),
             ),
           ],
@@ -239,10 +281,14 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
         children: [
           SizedBox(
             width: 90,
-            child: Text(label, style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF5A5D72))),
+            child: Text(label,
+                style: const TextStyle(
+                    fontWeight: FontWeight.w600, color: Color(0xFF5A5D72))),
           ),
           Expanded(
-            child: Text(value, style: const TextStyle(fontWeight: FontWeight.w500, color: Color(0xFF1E1E2F))),
+            child: Text(value,
+                style: const TextStyle(
+                    fontWeight: FontWeight.w500, color: Color(0xFF1E1E2F))),
           ),
         ],
       ),
@@ -256,7 +302,8 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        title: const Text('Agregar Etiqueta', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('Agregar Etiqueta',
+            style: TextStyle(fontWeight: FontWeight.bold)),
         content: TextField(
           controller: tagCtrl,
           autofocus: true,
@@ -302,12 +349,15 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
       builder: (ctx) => StatefulBuilder(
         builder: (context, setDialogState) {
           return AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             title: const Row(
               children: [
                 Icon(Icons.shield_outlined, color: Color(0xFF3227C9)),
                 SizedBox(width: 8),
-                Text('Apps a Bloquear', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                Text('Apps a Bloquear',
+                    style:
+                        TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
               ],
             ),
             content: SizedBox(
@@ -320,8 +370,11 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                   return CheckboxListTile(
                     value: app.isBlocked,
                     activeColor: const Color(0xFF3227C9),
-                    title: Text(app.name, style: const TextStyle(fontWeight: FontWeight.w600)),
-                    subtitle: Text(app.packageName, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                    title: Text(app.name,
+                        style: const TextStyle(fontWeight: FontWeight.w600)),
+                    subtitle: Text(app.packageName,
+                        style:
+                            const TextStyle(fontSize: 11, color: Colors.grey)),
                     onChanged: (val) {
                       setDialogState(() {
                         app.isBlocked = val ?? false;
@@ -338,7 +391,8 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: const Text('Listo', style: TextStyle(fontWeight: FontWeight.bold)),
+                child: const Text('Listo',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
               ),
             ],
           );
@@ -390,14 +444,10 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
             ),
           ],
         ),
-        actions: const [
+        actions: [
           Padding(
-            padding: EdgeInsets.only(right: 20),
-            child: CircleAvatar(
-              radius: 18,
-              backgroundColor: Color(0xFF3227C9),
-              child: Icon(Icons.person, color: Colors.white, size: 20),
-            ),
+            padding: const EdgeInsets.only(right: 20),
+            child: ProfileAvatarButton(onTap: widget.onOpenProfile),
           ),
         ],
       ),
@@ -450,7 +500,8 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: _buildBottomNavigationBar(),
+      bottomNavigationBar:
+          widget.showBottomNav ? _buildBottomNavigationBar() : null,
     );
   }
 
@@ -473,12 +524,14 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
               const SizedBox(height: 4),
               Row(
                 children: [
-                  const Icon(Icons.smartphone_outlined, size: 14, color: Color(0xFF6B6E82)),
+                  const Icon(Icons.smartphone_outlined,
+                      size: 14, color: Color(0xFF6B6E82)),
                   const SizedBox(width: 4),
                   Expanded(
                     child: Text(
                       'Tus datos se guardan de forma local en tu dispositivo',
-                      style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                      style:
+                          TextStyle(color: Colors.grey.shade600, fontSize: 12),
                     ),
                   ),
                 ],
@@ -493,7 +546,8 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
             color: Color(0xFFECEEFD),
             shape: BoxShape.circle,
           ),
-          child: const Icon(Icons.edit_note, color: Color(0xFF3227C9), size: 22),
+          child:
+              const Icon(Icons.edit_note, color: Color(0xFF3227C9), size: 22),
         ),
       ],
     );
@@ -521,7 +575,9 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                   children: [
                     TextSpan(
                       text: '*',
-                      style: TextStyle(color: Color(0xFFBA1A1A), fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                          color: Color(0xFFBA1A1A),
+                          fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
@@ -535,13 +591,17 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
           controller: _titleController,
           validator: FormValidators.validateTitle,
           textCapitalization: TextCapitalization.sentences,
-          style: const TextStyle(fontSize: 15, color: Color(0xFF1E1E2F), fontWeight: FontWeight.w500),
+          style: const TextStyle(
+              fontSize: 15,
+              color: Color(0xFF1E1E2F),
+              fontWeight: FontWeight.w500),
           decoration: InputDecoration(
             hintText: 'Ej. Finalizar informe de métricas Q2',
             hintStyle: const TextStyle(color: Color(0xFFA5A7B8)),
             filled: true,
             fillColor: const Color(0xFFF3F4F9),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
               borderSide: BorderSide.none,
@@ -552,11 +612,13 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(color: Color(0xFF3227C9), width: 1.5),
+              borderSide:
+                  const BorderSide(color: Color(0xFF3227C9), width: 1.5),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(color: Color(0xFFBA1A1A), width: 1.5),
+              borderSide:
+                  const BorderSide(color: Color(0xFFBA1A1A), width: 1.5),
             ),
             focusedErrorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
@@ -570,7 +632,8 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
             Icon(
               isValid ? Icons.check_circle_outline : Icons.info_outline,
               size: 15,
-              color: isValid ? const Color(0xFF3227C9) : const Color(0xFF757588),
+              color:
+                  isValid ? const Color(0xFF3227C9) : const Color(0xFF757588),
             ),
             const SizedBox(width: 5),
             Expanded(
@@ -579,7 +642,9 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
-                  color: isValid ? const Color(0xFF3227C9) : const Color(0xFF757588),
+                  color: isValid
+                      ? const Color(0xFF3227C9)
+                      : const Color(0xFF757588),
                 ),
               ),
             ),
@@ -611,7 +676,9 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                   children: [
                     TextSpan(
                       text: '*',
-                      style: TextStyle(color: Color(0xFFBA1A1A), fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                          color: Color(0xFFBA1A1A),
+                          fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
@@ -651,9 +718,11 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
           validator: FormValidators.validateGoal,
           minLines: 3,
           maxLines: 4,
-          style: const TextStyle(fontSize: 14, color: Color(0xFF1E1E2F), height: 1.4),
+          style: const TextStyle(
+              fontSize: 14, color: Color(0xFF1E1E2F), height: 1.4),
           decoration: InputDecoration(
-            hintText: 'Ej. Completar el análisis de retención de usuarios y redactar las 3 conclusiones clave.',
+            hintText:
+                'Ej. Completar el análisis de retención de usuarios y redactar las 3 conclusiones clave.',
             hintStyle: const TextStyle(color: Color(0xFFA5A7B8)),
             filled: true,
             fillColor: const Color(0xFFF3F4F9),
@@ -668,11 +737,13 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(color: Color(0xFF3227C9), width: 1.5),
+              borderSide:
+                  const BorderSide(color: Color(0xFF3227C9), width: 1.5),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(color: Color(0xFFBA1A1A), width: 1.5),
+              borderSide:
+                  const BorderSide(color: Color(0xFFBA1A1A), width: 1.5),
             ),
             focusedErrorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
@@ -686,7 +757,8 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
             Icon(
               isValid ? Icons.check_circle_outline : Icons.info_outline,
               size: 15,
-              color: isValid ? const Color(0xFF3227C9) : const Color(0xFF757588),
+              color:
+                  isValid ? const Color(0xFF3227C9) : const Color(0xFF757588),
             ),
             const SizedBox(width: 5),
             Expanded(
@@ -695,7 +767,9 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
-                  color: isValid ? const Color(0xFF3227C9) : const Color(0xFF757588),
+                  color: isValid
+                      ? const Color(0xFF3227C9)
+                      : const Color(0xFF757588),
                 ),
               ),
             ),
@@ -707,7 +781,8 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
 
   // 3. Campo: Duración de la sesión con Presets, Slider y TextFormField sincronizado
   Widget _buildDurationField() {
-    final currentMinutes = int.tryParse(_durationController.text) ?? _durationSliderValue.round();
+    final currentMinutes =
+        int.tryParse(_durationController.text) ?? _durationSliderValue.round();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -727,7 +802,9 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                   children: [
                     TextSpan(
                       text: '*',
-                      style: TextStyle(color: Color(0xFFBA1A1A), fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                          color: Color(0xFFBA1A1A),
+                          fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
@@ -764,12 +841,17 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
               onTap: () => _setDuration(mins),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
-                  color: isSelected ? const Color(0xFF3227C9) : const Color(0xFFF3F4F9),
+                  color: isSelected
+                      ? const Color(0xFF3227C9)
+                      : const Color(0xFFF3F4F9),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: isSelected ? const Color(0xFF3227C9) : const Color(0xFFE9ECF8),
+                    color: isSelected
+                        ? const Color(0xFF3227C9)
+                        : const Color(0xFFE9ECF8),
                   ),
                 ),
                 child: Text(
@@ -814,12 +896,17 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('5 min', style: TextStyle(color: Colors.grey.shade600, fontSize: 11)),
+            Text('5 min',
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 11)),
             const Text(
               'Ajuste fino manual',
-              style: TextStyle(color: Color(0xFF1E1E2F), fontSize: 11, fontWeight: FontWeight.w600),
+              style: TextStyle(
+                  color: Color(0xFF1E1E2F),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600),
             ),
-            Text('180 min (3h)', style: TextStyle(color: Colors.grey.shade600, fontSize: 11)),
+            Text('180 min (3h)',
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 11)),
           ],
         ),
         const SizedBox(height: 10),
@@ -837,7 +924,10 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                 SizedBox(width: 6),
                 Text(
                   'Entrada directa en minutos:',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFF5A5D72)),
+                  style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF5A5D72)),
                 ),
               ],
             ),
@@ -848,10 +938,12 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                 validator: FormValidators.validateDuration,
                 keyboardType: TextInputType.number,
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                style:
+                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                 decoration: InputDecoration(
                   isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                   filled: true,
                   fillColor: const Color(0xFFF3F4F9),
                   border: OutlineInputBorder(
@@ -935,7 +1027,9 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isSelected
-                  ? (isAltaSelected ? const Color(0xFFBA1A1A) : const Color(0xFF3227C9))
+                  ? (isAltaSelected
+                      ? const Color(0xFFBA1A1A)
+                      : const Color(0xFF3227C9))
                   : const Color(0xFFE9ECF8),
             ),
           ),
@@ -946,14 +1040,16 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                 Container(
                   width: 8,
                   height: 8,
-                  decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+                  decoration:
+                      BoxDecoration(color: color, shape: BoxShape.circle),
                 ),
                 const SizedBox(width: 6),
               ],
               Text(
                 label,
                 style: TextStyle(
-                  color: isAltaSelected ? Colors.white : const Color(0xFF1E1E2F),
+                  color:
+                      isAltaSelected ? Colors.white : const Color(0xFF1E1E2F),
                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
                   fontSize: 13,
                 ),
@@ -985,7 +1081,8 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
           children: [
             ..._tags.map(
               (tag) => Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                 decoration: BoxDecoration(
                   color: const Color(0xFFECEEFD),
                   borderRadius: BorderRadius.circular(16),
@@ -1005,7 +1102,8 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                     const SizedBox(width: 6),
                     InkWell(
                       onTap: () => setState(() => _tags.remove(tag)),
-                      child: const Icon(Icons.close, size: 14, color: Color(0xFF3227C9)),
+                      child: const Icon(Icons.close,
+                          size: 14, color: Color(0xFF3227C9)),
                     ),
                   ],
                 ),
@@ -1015,11 +1113,13 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
               borderRadius: BorderRadius.circular(16),
               onTap: _showAddTagDialog,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFD6DBF8), style: BorderStyle.solid),
+                  border: Border.all(
+                      color: const Color(0xFFD6DBF8), style: BorderStyle.solid),
                 ),
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
@@ -1052,12 +1152,14 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: _appsErrorMessage != null ? const Color(0xFFBA1A1A) : const Color(0xFFE9ECF8),
+          color: _appsErrorMessage != null
+              ? const Color(0xFFBA1A1A)
+              : const Color(0xFFE9ECF8),
           width: _appsErrorMessage != null ? 1.5 : 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -1075,7 +1177,8 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                   color: const Color(0xFFECEEFD),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.do_not_disturb_on_outlined, color: Color(0xFF3227C9), size: 20),
+                child: const Icon(Icons.do_not_disturb_on_outlined,
+                    color: Color(0xFF3227C9), size: 20),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -1092,14 +1195,15 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                     ),
                     Text(
                       'Activar bloqueo estricto (Android Accessibility)',
-                      style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                      style:
+                          TextStyle(fontSize: 11, color: Colors.grey.shade600),
                     ),
                   ],
                 ),
               ),
               Switch(
                 value: _blockDistractions,
-                activeColor: const Color(0xFF3227C9),
+                activeThumbColor: const Color(0xFF3227C9),
                 onChanged: (val) {
                   setState(() {
                     _blockDistractions = val;
@@ -1152,7 +1256,8 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
               const SizedBox(height: 10),
               Row(
                 children: [
-                  const Icon(Icons.error_outline, size: 14, color: Color(0xFFBA1A1A)),
+                  const Icon(Icons.error_outline,
+                      size: 14, color: Color(0xFFBA1A1A)),
                   const SizedBox(width: 6),
                   Text(
                     _appsErrorMessage!,
@@ -1212,7 +1317,9 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
           color: app.isBlocked ? const Color(0xFFF3F4F9) : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: app.isBlocked ? const Color(0xFFD6DBF8) : const Color(0xFFE9ECF8),
+            color: app.isBlocked
+                ? const Color(0xFFD6DBF8)
+                : const Color(0xFFE9ECF8),
           ),
         ),
         child: Row(
@@ -1221,7 +1328,7 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
               width: 26,
               height: 26,
               decoration: BoxDecoration(
-                color: iconColor.withOpacity(0.12),
+                color: iconColor.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Icon(icon, size: 15, color: iconColor),
@@ -1234,14 +1341,18 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
                   fontSize: 12,
-                  color: app.isBlocked ? const Color(0xFF1E1E2F) : Colors.grey.shade500,
+                  color: app.isBlocked
+                      ? const Color(0xFF1E1E2F)
+                      : Colors.grey.shade500,
                 ),
               ),
             ),
             Icon(
               app.isBlocked ? Icons.check_circle : Icons.circle_outlined,
               size: 14,
-              color: app.isBlocked ? const Color(0xFF3227C9) : Colors.grey.shade400,
+              color: app.isBlocked
+                  ? const Color(0xFF3227C9)
+                  : Colors.grey.shade400,
             ),
           ],
         ),
@@ -1260,7 +1371,8 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
           backgroundColor: const Color(0xFF3227C9),
           foregroundColor: Colors.white,
           elevation: 2,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         ),
         child: const Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -1288,7 +1400,8 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
           backgroundColor: const Color(0xFFECEEFD),
           foregroundColor: const Color(0xFF3227C9),
           elevation: 0,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         ),
         child: const Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -1316,16 +1429,27 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildNavItem(icon: Icons.check_circle_outline, label: 'Tareas', isSelected: false),
-          _buildNavItem(icon: Icons.add_circle_outline, label: 'Nueva', isSelected: true),
-          _buildNavItem(icon: Icons.adjust_outlined, label: 'Enfoque', isSelected: false),
-          _buildNavItem(icon: Icons.show_chart_outlined, label: 'Historial', isSelected: false),
+          _buildNavItem(
+              icon: Icons.check_circle_outline,
+              label: 'Tareas',
+              isSelected: false),
+          _buildNavItem(
+              icon: Icons.add_circle_outline, label: 'Nueva', isSelected: true),
+          _buildNavItem(
+              icon: Icons.adjust_outlined, label: 'Enfoque', isSelected: false),
+          _buildNavItem(
+              icon: Icons.show_chart_outlined,
+              label: 'Historial',
+              isSelected: false),
         ],
       ),
     );
   }
 
-  Widget _buildNavItem({required IconData icon, required String label, required bool isSelected}) {
+  Widget _buildNavItem(
+      {required IconData icon,
+      required String label,
+      required bool isSelected}) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [

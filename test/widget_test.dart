@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:enfoque_app/main.dart';
+import 'package:enfoque_app/widgets/task_form_screen.dart';
 
 void main() {
   testWidgets('Verifica renderizado de formulario de tareas y validaciones', (WidgetTester tester) async {
@@ -10,7 +10,8 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
 
     // Renderiza la aplicación
-    await tester.pumpWidget(const EnfoqueApp());
+    // La app ahora inicia en la Bienvenida, así que se prueba el formulario directamente
+    await tester.pumpWidget(const MaterialApp(home: TaskFormScreen()));
     await tester.pumpAndSettle();
 
     // Comprueba elementos clave de la interfaz según el diseño (AppBar y BottomBar tienen "Nueva")

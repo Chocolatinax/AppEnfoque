@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'widgets/task_form_screen.dart';
+import 'screens/welcome_screen.dart';
+import 'theme/app_colors.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,7 +24,7 @@ class EnfoqueApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
-        scaffoldBackgroundColor: const Color(0xFFF9F9FE),
+        scaffoldBackgroundColor: AppColors.surface,
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFF3227C9),
           primary: const Color(0xFF3227C9),
@@ -31,7 +32,8 @@ class EnfoqueApp extends StatelessWidget {
         ),
         fontFamily: 'Roboto',
       ),
-      home: const TaskFormScreen(),
+      // Flujo: Bienvenida -> Tareas / Nueva / Enfoque / Historial -> Perfil
+      home: const WelcomeScreen(),
     );
   }
 }

@@ -1,4 +1,8 @@
-# Enfoque — App de productividad para estudiantes
+<p align="center">
+  <img src="assets/branding/floria_logo_horizontal.png" alt="Floria" width="460">
+</p>
+
+# Floria — App de enfoque para estudiantes
 
 Aplicación móvil desarrollada en **Flutter** que ayuda a estudiantes a mantener sesiones de estudio concentradas, ligando cada sesión a una tarea concreta y bloqueando las apps que los distraen.
 
@@ -10,7 +14,7 @@ Aplicación móvil desarrollada en **Flutter** que ayuda a estudiantes a mantene
 
 Los estudiantes que estudian solos suelen carecer de una rutina sostenida de organización y concentración. Muchos ya probaron técnicas como Pomodoro, pero fallan porque **nada les impide abrir la app que los distrae**.
 
-Enfoque está pensada para estudiantes de bachillerato y universidad (aprox. 15 a 25 años) y funciona **100% offline**: no requiere cuenta ni conexión a internet, y todos los datos viven en el dispositivo.
+Floria está pensada para estudiantes de bachillerato y universidad (aprox. 15 a 25 años) y funciona **100% offline**: no requiere cuenta ni conexión a internet, y todos los datos viven en el dispositivo.
 
 ### Flujo principal
 

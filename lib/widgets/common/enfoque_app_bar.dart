@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
-import '../../theme/app_colors.dart';
+import '../../theme/app_palette.dart';
 
-/// Encabezado compartido por las pestañas principales (Tareas, Enfoque, Historial).
-/// Sigue el mismo estilo del encabezado de la pantalla "Nueva":
-/// título grande + indicador "100% OFFLINE / LOCAL" + avatar del perfil.
+/// Encabezado compartido por las pestañas principales (Tareas, Enfoque, Historial):
+/// título + indicador "Sin internet · datos en tu teléfono" + botón de Ajustes.
 class EnfoqueAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
-  final VoidCallback? onAvatarTap;
+  final VoidCallback? onSettingsTap;
 
   const EnfoqueAppBar({
     super.key,
     required this.title,
-    this.onAvatarTap,
+    this.onSettingsTap,
   });
 
   @override
@@ -19,11 +18,9 @@ class EnfoqueAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
+
     return AppBar(
-      backgroundColor: AppColors.surface,
-      surfaceTintColor: Colors.transparent,
-      elevation: 0,
-      scrolledUnderElevation: 0.5,
       automaticallyImplyLeading: false,
       titleSpacing: 20,
       toolbarHeight: kToolbarHeight + 8,
@@ -32,31 +29,15 @@ class EnfoqueAppBar extends StatelessWidget implements PreferredSizeWidget {
         children: [
           Text(
             title,
-            style: const TextStyle(
-              color: AppColors.onSurface,
-              fontWeight: FontWeight.w800,
-              fontSize: 24,
-            ),
+            style: TextStyle(color: p.onSurface, fontWeight: FontWeight.w800, fontSize: 24),
           ),
           Row(
             children: [
-              Container(
-                width: 6,
-                height: 6,
-                decoration: const BoxDecoration(
-                  color: AppColors.primary,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 5),
-              const Text(
-                '100% OFFLINE / LOCAL',
-                style: TextStyle(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 10,
-                  letterSpacing: 0.6,
-                ),
+              Icon(Icons.wifi_off_rounded, size: 13, color: p.onSurfaceVariant),
+              const SizedBox(width: 4),
+              Text(
+                'Sin internet · datos en tu teléfono',
+                style: TextStyle(color: p.onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.w500),
               ),
             ],
           ),
@@ -64,34 +45,26 @@ class EnfoqueAppBar extends StatelessWidget implements PreferredSizeWidget {
       ),
       actions: [
         Padding(
-          padding: const EdgeInsets.only(right: 20),
-          child: ProfileAvatarButton(onTap: onAvatarTap),
+          padding: const EdgeInsets.only(right: 8),
+          child: SettingsButton(onTap: onSettingsTap),
         ),
       ],
     );
   }
 }
 
-/// Avatar circular que abre el perfil de invitado.
-class ProfileAvatarButton extends StatelessWidget {
+/// Botón de engranaje que abre Ajustes (área táctil de 48 dp y etiqueta para lectores).
+class SettingsButton extends StatelessWidget {
   final VoidCallback? onTap;
-  final double radius;
 
-  const ProfileAvatarButton({super.key, this.onTap, this.radius = 18});
+  const SettingsButton({super.key, this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Tooltip(
-      message: 'Perfil',
-      child: InkWell(
-        onTap: onTap,
-        customBorder: const CircleBorder(),
-        child: CircleAvatar(
-          radius: radius,
-          backgroundColor: AppColors.primary,
-          child: Icon(Icons.person, color: Colors.white, size: radius + 2),
-        ),
-      ),
+    return IconButton(
+      onPressed: onTap,
+      tooltip: 'Ajustes',
+      icon: Icon(Icons.settings_outlined, color: context.palette.onSurfaceVariant),
     );
   }
 }

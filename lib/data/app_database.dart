@@ -1,0 +1,88 @@
+import 'package:path/path.dart' as p;
+import 'package:sqflite/sqflite.dart';
+
+/// Base de datos local de Floria (SQLite).
+///
+/// Todo vive en el teléfono: no hay servidor ni sincronización (ver ficha del proyecto).
+///
+/// Tablas:
+/// - `tasks`: tareas creadas por el usuario (tiempo libre o Pomodoro).
+/// - `sessions`: sesiones de enfoque completadas o abandonadas, para el historial (R2).
+///
+/// Versiones:
+/// - v1: tablas iniciales.
+/// - v2: modo de tiempo (libre / Pomodoro) en tareas y tiempo real de enfoque en sesiones.
+class AppDatabase {
+  static const String fileName = 'floria.db';
+  static const int version = 2;
+
+  final Database db;
+
+  AppDatabase._(this.db);
+
+  /// Abre (o crea) la base de datos.
+  ///
+  /// [factory] y [path] solo se usan en las pruebas para abrir una base en memoria.
+  static Future<AppDatabase> open({DatabaseFactory? factory, String? path}) async {
+    final dbFactory = factory ?? databaseFactory;
+    final dbPath = path ?? p.join(await dbFactory.getDatabasesPath(), fileName);
+
+    final db = await dbFactory.openDatabase(
+      dbPath,
+      options: OpenDatabaseOptions(
+        version: version,
+        onConfigure: (db) => db.execute('PRAGMA foreign_keys = ON'),
+        onCreate: _onCreate,
+        onUpgrade: _onUpgrade,
+      ),
+    );
+    return AppDatabase._(db);
+  }
+
+  /// Instalación nueva: crea el esquema completo de la última versión.
+  static Future<void> _onCreate(Database db, int version) async {
+    await db.execute('''
+      CREATE TABLE tasks (
+        id                 TEXT PRIMARY KEY,
+        title              TEXT NOT NULL,
+        goal               TEXT NOT NULL,
+        duration_minutes   INTEGER NOT NULL CHECK (duration_minutes BETWEEN 5 AND 180),
+        priority           TEXT NOT NULL CHECK (priority IN ('Alta', 'Media', 'Baja')),
+        timer_mode         TEXT NOT NULL DEFAULT 'libre' CHECK (timer_mode IN ('libre', 'pomodoro')),
+        pomodoro_rounds    INTEGER NOT NULL DEFAULT 0,
+        tags               TEXT NOT NULL DEFAULT '[]',
+        block_distractions INTEGER NOT NULL DEFAULT 1,
+        blocked_apps       TEXT NOT NULL DEFAULT '[]',
+        is_done            INTEGER NOT NULL DEFAULT 0,
+        created_at         TEXT NOT NULL
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE sessions (
+        id               TEXT PRIMARY KEY,
+        task_id          TEXT REFERENCES tasks(id) ON DELETE SET NULL,
+        task_title       TEXT NOT NULL,
+        planned_minutes  INTEGER NOT NULL,
+        focus_seconds    INTEGER NOT NULL DEFAULT 0,
+        started_at       TEXT NOT NULL,
+        ended_at         TEXT,
+        status           TEXT NOT NULL CHECK (status IN ('en_curso', 'completada', 'abandonada')),
+        goal_result      TEXT CHECK (goal_result IN ('si', 'en_parte', 'no'))
+      )
+    ''');
+
+    await db.execute('CREATE INDEX idx_sessions_started_at ON sessions(started_at)');
+  }
+
+  /// Actualiza una base existente sin perder datos.
+  static Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute("ALTER TABLE tasks ADD COLUMN timer_mode TEXT NOT NULL DEFAULT 'libre'");
+      await db.execute('ALTER TABLE tasks ADD COLUMN pomodoro_rounds INTEGER NOT NULL DEFAULT 0');
+      await db.execute('ALTER TABLE sessions ADD COLUMN focus_seconds INTEGER NOT NULL DEFAULT 0');
+    }
+  }
+
+  Future<void> close() => db.close();
+}

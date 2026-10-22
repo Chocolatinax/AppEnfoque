@@ -1,45 +1,77 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:enfoque_app/theme/app_theme.dart';
 import 'package:enfoque_app/widgets/task_form_screen.dart';
 
 void main() {
-  testWidgets('Verifica renderizado de formulario de tareas y validaciones', (WidgetTester tester) async {
-    // Configura pantalla de tamaño móvil realista
+  Future<void> pumpForm(WidgetTester tester) async {
+    // Pantalla de tamaño móvil realista
     tester.view.physicalSize = const Size(1080, 2400);
     tester.view.devicePixelRatio = 2.0;
     addTearDown(tester.view.resetPhysicalSize);
 
-    // Renderiza la aplicación
-    // La app ahora inicia en la Bienvenida, así que se prueba el formulario directamente
-    await tester.pumpWidget(const MaterialApp(home: TaskFormScreen()));
+    await tester.pumpWidget(MaterialApp(theme: AppTheme.light, home: const TaskFormScreen()));
     await tester.pumpAndSettle();
+  }
 
-    // Comprueba elementos clave de la interfaz según el diseño (AppBar y BottomBar tienen "Nueva")
-    expect(find.text('Nueva'), findsNWidgets(2));
-    expect(find.text('100% OFFLINE / LOCAL'), findsOneWidget);
-    expect(find.text('Crear Nueva Tarea'), findsOneWidget);
-    expect(find.text('Guardar e Iniciar Enfoque'), findsOneWidget);
-    expect(find.text('Solo Guardar en Lista'), findsOneWidget);
+  testWidgets('El formulario rechaza datos inválidos antes de guardar', (tester) async {
+    await pumpForm(tester);
 
-    // Comprueba que los campos de texto existen
-    final textFields = find.byType(TextFormField);
-    expect(textFields, findsNWidgets(3)); // Título, Objetivo, Duración
+    // Elementos clave de la interfaz
+    expect(find.text('Nueva tarea'), findsOneWidget);
+    expect(find.text('Guardar e iniciar enfoque'), findsOneWidget);
+    expect(find.text('Solo guardar'), findsOneWidget);
 
-    // Prueba de rechazo: Borra el título para dejarlo inválido y presiona guardar
-    final titleFinder = find.widgetWithText(TextFormField, 'Finalizar informe de métricas Q2');
-    await tester.enterText(titleFinder, '');
-    await tester.pumpAndSettle();
+    // Modo "Tiempo libre" (por defecto): título, objetivo y duración
+    expect(find.byType(TextFormField), findsNWidgets(3));
 
-    // Presiona el botón de guardar
-    final saveButton = find.text('Guardar e Iniciar Enfoque');
+    // Presionar guardar con el formulario vacío
+    final saveButton = find.text('Guardar e iniciar enfoque');
     await tester.ensureVisible(saveButton);
     await tester.tap(saveButton);
     await tester.pumpAndSettle();
 
-    // Comprueba que el validador del campo 1 rechazó la entrada y mostró el mensaje de error
+    // Los validadores rechazan título y objetivo vacíos
     expect(find.text('Por favor ingresa el título de la tarea'), findsOneWidget);
+    expect(find.text('Declara qué quieres lograr en esta sesión'), findsOneWidget);
 
-    // Comprueba que apareció el SnackBar de error indicando datos inválidos
-    expect(find.text('Datos inválidos: Revisa los campos marcados en rojo antes de guardar.'), findsOneWidget);
+    // Aviso general de datos inválidos
+    expect(find.text('Revisa los campos marcados antes de guardar.'), findsOneWidget);
+  });
+
+  testWidgets('El modo Pomodoro reemplaza el campo de minutos por rondas', (tester) async {
+    await pumpForm(tester);
+
+    await tester.tap(find.text('Pomodoro'));
+    await tester.pumpAndSettle();
+
+    // Ya no se escribe la duración: se eligen rondas (4 por defecto = 100 min)
+    expect(find.byType(TextFormField), findsNWidgets(2));
+    // 4 rondas: 100 min de enfoque + (5 + 5 + 5 + 25) = 40 min de descanso
+    expect(find.text('Total: 100 min de enfoque + 40 min de descanso'), findsOneWidget);
+
+    // Agregar una ronda: 5 x 25 = 125 min
+    await tester.tap(find.byTooltip('Agregar una ronda'));
+    await tester.pumpAndSettle();
+    expect(find.text('Total: 125 min de enfoque + 45 min de descanso'), findsOneWidget);
+  });
+
+  testWidgets('Exige al menos una app si el bloqueo está activo', (tester) async {
+    await pumpForm(tester);
+
+    // Desmarcar las apps que vienen seleccionadas
+    for (final app in ['Instagram', 'TikTok', 'YouTube']) {
+      final tile = find.widgetWithText(CheckboxListTile, app);
+      await tester.ensureVisible(tile);
+      await tester.tap(tile);
+      await tester.pumpAndSettle();
+    }
+
+    final saveButton = find.text('Guardar e iniciar enfoque');
+    await tester.ensureVisible(saveButton);
+    await tester.tap(saveButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Debes seleccionar al menos una app para bloquear'), findsOneWidget);
   });
 }

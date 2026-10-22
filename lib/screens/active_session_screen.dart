@@ -1,16 +1,29 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../data/session_repository.dart';
+import '../data/task_repository.dart';
+import '../models/focus_session.dart';
 import '../models/task_model.dart';
-import '../theme/app_colors.dart';
+import '../theme/app_palette.dart';
+import '../theme/app_spacing.dart';
 import '../utils/ui_feedback.dart';
+import '../widgets/common/app_card.dart';
 
-/// Pantalla de Sesión Activa (enfoque en curso).
-/// Se abre al presionar "Guardar e Iniciar Enfoque" en el formulario.
+/// Una fase de la sesión: enfoque o descanso.
+class _Phase {
+  final bool isFocus;
+  final int minutes;
+  final int round;
+  const _Phase({required this.isFocus, required this.minutes, required this.round});
+}
+
+/// Sesión de enfoque en curso.
 ///
-/// Reglas de esta pantalla:
-/// - No hay botón de "volver": mientras la sesión corre, la única salida es
-///   terminar el tiempo o abandonar la sesión (que se registra como fallida).
-/// - El usuario puede tomar una pausa de emergencia de 2 minutos.
+/// - Tiempo libre: un solo bloque de enfoque.
+/// - Pomodoro: rondas de 25 min con descansos de 5 min (25 min cada 3 rondas).
+///
+/// No hay botón de volver: la única salida es terminar o abandonar.
+/// Al terminar pregunta si se cumplió el objetivo y guarda la sesión en el historial (R2).
 class ActiveSessionScreen extends StatefulWidget {
   final Task task;
 
@@ -20,21 +33,41 @@ class ActiveSessionScreen extends StatefulWidget {
   State<ActiveSessionScreen> createState() => _ActiveSessionScreenState();
 }
 
-class _ActiveSessionScreenState extends State<ActiveSessionScreen>
-    with SingleTickerProviderStateMixin {
-  static const int _pauseSeconds = 2 * 60;
+class _ActiveSessionScreenState extends State<ActiveSessionScreen> with SingleTickerProviderStateMixin {
+  static const int _emergencyPauseSeconds = 2 * 60;
 
-  late int _secondsLeft = widget.task.durationMinutes * 60;
+  late final List<_Phase> _phases = _buildPhases();
+  final DateTime _startedAt = DateTime.now();
+  int _phaseIndex = 0;
+  late int _secondsLeft = _phases.first.minutes * 60;
   int _pauseSecondsLeft = 0;
+  int _focusSeconds = 0;
+  bool _ended = false;
   Timer? _timer;
-  bool _finished = false;
 
-  late final AnimationController _breathController = AnimationController(
+  late final AnimationController _breath = AnimationController(
     vsync: this,
     duration: const Duration(seconds: 4),
-  )..repeat(reverse: true);
+  );
 
+  _Phase get _phase => _phases[_phaseIndex];
+  bool get _isLastPhase => _phaseIndex == _phases.length - 1;
   bool get _isPaused => _pauseSecondsLeft > 0;
+  int get _focusRounds => _phases.where((ph) => ph.isFocus).length;
+
+  List<_Phase> _buildPhases() {
+    final task = widget.task;
+    if (!task.isPomodoro) {
+      return [_Phase(isFocus: true, minutes: task.durationMinutes, round: 1)];
+    }
+    final phases = <_Phase>[];
+    for (var r = 1; r <= task.pomodoroRounds; r++) {
+      phases.add(_Phase(isFocus: true, minutes: Pomodoro.focusMinutes, round: r));
+      // Toda ronda termina con su descanso (también la última)
+      phases.add(_Phase(isFocus: false, minutes: Pomodoro.breakAfterRound(r), round: r));
+    }
+    return phases;
+  }
 
   @override
   void initState() {
@@ -43,521 +76,292 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen>
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Accesibilidad: respetar "reducir movimiento" del sistema
+    if (MediaQuery.of(context).disableAnimations) {
+      _breath.stop();
+    } else if (!_breath.isAnimating) {
+      _breath.repeat(reverse: true);
+    }
+  }
+
+  @override
   void dispose() {
     _timer?.cancel();
-    _breathController.dispose();
+    _breath.dispose();
     super.dispose();
   }
 
+  // ---------- Lógica del temporizador ----------
+
   void _tick() {
-    if (!mounted || _finished) return;
+    if (!mounted || _ended) return;
     setState(() {
       if (_isPaused) {
-        // Durante la pausa el bloque de enfoque se detiene
         _pauseSecondsLeft--;
-        if (_pauseSecondsLeft == 0) {
-          showAppSnackBar(context, 'Pausa terminada. ¡De vuelta al enfoque!');
-        }
+        if (_pauseSecondsLeft == 0) showAppSnackBar(context, 'Pausa terminada. De vuelta al enfoque.');
         return;
       }
-      if (_secondsLeft > 0) _secondsLeft--;
-      if (_secondsLeft == 0) {
-        _finished = true;
-        _timer?.cancel();
-        WidgetsBinding.instance.addPostFrameCallback((_) => _showCompletedDialog());
+      if (_secondsLeft > 0) {
+        _secondsLeft--;
+        if (_phase.isFocus) _focusSeconds++;
       }
+      if (_secondsLeft == 0) _nextPhase();
     });
   }
 
-  void _togglePause() {
-    setState(() {
-      if (_isPaused) {
-        _pauseSecondsLeft = 0; // Reanudar antes de que acabe la pausa
-      } else {
-        _pauseSecondsLeft = _pauseSeconds;
-      }
-    });
-  }
-
-  Future<void> _confirmAbandon() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        title: const Text('¿Abandonar sesión?', style: TextStyle(fontWeight: FontWeight.w700)),
-        content: const Text(
-          '¿Seguro que deseas rendirte? Esta sesión se registrará como fallida y tu árbol en crecimiento se marchitará.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Seguir enfocado'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: TextButton.styleFrom(foregroundColor: AppColors.error),
-            child: const Text('Abandonar', style: TextStyle(fontWeight: FontWeight.w700)),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed != true || !mounted) return;
-    _timer?.cancel();
+  void _nextPhase() {
+    if (_phaseIndex == _phases.length - 1) {
+      _ended = true;
+      _timer?.cancel();
+      WidgetsBinding.instance.addPostFrameCallback((_) => _finish());
+      return;
+    }
+    _phaseIndex++;
+    _secondsLeft = _phase.minutes * 60;
     showAppSnackBar(
       context,
-      'Sesión registrada como fallida',
-      icon: Icons.cancel_outlined,
-      backgroundColor: AppColors.error,
+      _phase.isFocus
+          ? 'Ronda ${_phase.round}: de vuelta al enfoque'
+          : '¡Bien! Toma un descanso de ${_phase.minutes} min',
+      icon: _phase.isFocus ? Icons.spa_outlined : Icons.local_cafe_outlined,
     );
+  }
+
+  void _toggleEmergencyPause() {
+    setState(() => _pauseSecondsLeft = _isPaused ? 0 : _emergencyPauseSeconds);
+  }
+
+  void _skipBreak() {
+    setState(() {
+      _secondsLeft = 0;
+      _nextPhase();
+    });
+  }
+
+  // ---------- Cierre de sesión ----------
+
+  Future<void> _record(String status, {String? goalResult}) async {
+    await SessionScope.read(context)?.record(
+      FocusSession(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        taskId: widget.task.id,
+        taskTitle: widget.task.title,
+        plannedMinutes: widget.task.durationMinutes,
+        focusSeconds: _focusSeconds,
+        startedAt: _startedAt,
+        endedAt: DateTime.now(),
+        status: status,
+        goalResult: goalResult,
+      ),
+    );
+  }
+
+  Future<void> _finish() async {
+    if (!mounted) return;
+    final result = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => _GoalResultDialog(goal: widget.task.goal),
+    );
+    if (!mounted) return;
+
+    await _record(SessionStatus.completed, goalResult: result);
+    if (!mounted) return;
+
+    // Si cumplió su objetivo, la tarea se marca como hecha
+    if (result == GoalResult.yes) {
+      final tasks = TaskScope.read(context);
+      final saved = tasks?.tasks.where((t) => t.id == widget.task.id).firstOrNull;
+      if (saved != null && !saved.isDone) await tasks!.toggleDone(saved.id);
+    }
+    if (!mounted) return;
+
+    showAppSnackBar(context, 'Sesión guardada en tu historial');
     Navigator.of(context).pop();
   }
 
-  Future<void> _showCompletedDialog() async {
-    if (!mounted) return;
-    await showDialog<void>(
+  Future<void> _confirmAbandon() async {
+    final p = context.palette;
+    final confirmed = await showDialog<bool>(
       context: context,
-      barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        icon: const Icon(Icons.emoji_events_outlined, color: AppColors.primary, size: 36),
-        title: const Text('¡Sesión completada!', style: TextStyle(fontWeight: FontWeight.w700)),
-        content: Text(
-          'Terminaste ${widget.task.durationMinutes} minutos de enfoque en "${widget.task.title}".',
-          textAlign: TextAlign.center,
-        ),
+        title: const Text('¿Abandonar la sesión?'),
+        content: const Text('Se registrará como abandonada en tu historial.'),
         actions: [
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () => Navigator.pop(ctx),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              child: const Text('Terminar', style: TextStyle(fontWeight: FontWeight.w700)),
-            ),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Seguir enfocado')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: p.error),
+            child: const Text('Abandonar'),
           ),
         ],
       ),
     );
-    if (mounted) Navigator.of(context).pop();
+    if (confirmed != true || !mounted) return;
+
+    _ended = true;
+    _timer?.cancel();
+    await _record(SessionStatus.abandoned);
+    if (!mounted) return;
+
+    showAppSnackBar(context, 'Sesión registrada como abandonada', icon: Icons.close_rounded);
+    Navigator.of(context).pop();
   }
 
-  String _format(int totalSeconds) {
-    final m = (totalSeconds ~/ 60).toString().padLeft(2, '0');
-    final s = (totalSeconds % 60).toString().padLeft(2, '0');
+  // ---------- Interfaz ----------
+
+  String _format(int seconds) {
+    final m = (seconds ~/ 60).toString().padLeft(2, '0');
+    final s = (seconds % 60).toString().padLeft(2, '0');
     return '$m:$s';
+  }
+
+  String get _phaseLabel {
+    if (!widget.task.isPomodoro) return 'Enfoque';
+    if (_phase.isFocus) return 'Ronda ${_phase.round} de $_focusRounds · Enfoque';
+    final kind = _phase.minutes == Pomodoro.longBreakMinutes ? 'Descanso largo' : 'Descanso corto';
+    return _isLastPhase ? '$kind · Último' : kind;
   }
 
   @override
   Widget build(BuildContext context) {
-    // PopScope bloquea el botón "atrás" del sistema mientras la sesión está activa.
+    final p = context.palette;
+    final t = Theme.of(context).textTheme;
+    final onBreak = !_phase.isFocus;
+    final accent = onBreak ? p.secondary : p.primary;
+
     return PopScope(
-      canPop: _finished,
+      canPop: _ended,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) {
-          showAppSnackBar(
-            context,
-            'Tu sesión sigue activa. Usa la pausa o abandona la sesión.',
-            icon: Icons.lock_outline,
-          );
+          showAppSnackBar(context, 'Tu sesión sigue activa. Usa la pausa o abandona la sesión.',
+              icon: Icons.lock_outline);
         }
       },
       child: Scaffold(
-        backgroundColor: AppColors.surface,
         appBar: AppBar(
-          backgroundColor: AppColors.surface,
-          surfaceTintColor: Colors.transparent,
-          elevation: 0,
-          automaticallyImplyLeading: false, // Sin botón de volver
-          titleSpacing: 20,
-          title: const Text(
-            'Sesión Activa',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.onSurface),
-          ),
-          actions: const [
-            Padding(
-              padding: EdgeInsets.only(right: 20),
-              child: CircleAvatar(
-                radius: 18,
-                backgroundColor: AppColors.primary,
-                child: Icon(Icons.person_outline, color: Colors.white, size: 20),
-              ),
-            ),
-          ],
+          automaticallyImplyLeading: false,
+          title: Text(onBreak ? 'Descanso' : 'Sesión de enfoque'),
         ),
-        body: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildBreathingHeader(),
-              const SizedBox(height: 20),
-              _buildCountdownCard(),
-              const SizedBox(height: 16),
-              _buildCommitmentCard(),
-              const SizedBox(height: 16),
-              _buildFrictionCard(),
-              const SizedBox(height: 20),
-              _buildPauseButton(),
-              const SizedBox(height: 8),
-              Center(
-                child: TextButton.icon(
-                  onPressed: _confirmAbandon,
-                  style: TextButton.styleFrom(foregroundColor: AppColors.error),
-                  icon: const Icon(Icons.cancel_outlined, size: 16),
-                  label: const Text(
-                    'Abandonar sesión (Registrará sesión fallida)',
-                    style: TextStyle(fontSize: 12),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ---------- Secciones ----------
-
-  Widget _buildBreathingHeader() {
-    return Column(
-      children: [
-        SizedBox(
-          width: 140,
-          height: 140,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              // Aura que "respira" (crece y se encoge lentamente)
-              ScaleTransition(
-                scale: Tween(begin: 0.85, end: 1.0).animate(
-                  CurvedAnimation(parent: _breathController, curve: Curves.easeInOut),
-                ),
-                child: Container(
-                  width: 140,
-                  height: 140,
-                  decoration: const BoxDecoration(
-                    color: Color(0x40E2DFFF),
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ),
-              Container(
-                width: 104,
-                height: 104,
-                decoration: const BoxDecoration(
-                  color: Color(0x80E1E0FF),
-                  shape: BoxShape.circle,
-                ),
-              ),
-              Container(
-                width: 72,
-                height: 72,
-                decoration: const BoxDecoration(
-                  color: AppColors.primary,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(color: Color(0x333525CD), blurRadius: 12, offset: Offset(0, 4)),
-                  ],
-                ),
-                child: const Icon(Icons.spa, color: Colors.white, size: 34),
-              ),
-              Positioned(
-                right: 26,
-                bottom: 22,
-                child: Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: AppColors.tertiary,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.surface, width: 2),
-                  ),
-                  child: const Icon(Icons.lock_outline, color: Colors.white, size: 16),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          _isPaused ? 'Pausa de emergencia' : '¡Respira profundo!',
-          style: const TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.w700,
-            letterSpacing: -0.4,
-            color: AppColors.onSurface,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          _isPaused
-              ? 'Tu bloque está detenido. Volverás al enfoque en ${_format(_pauseSecondsLeft)}.'
-              : 'Tienes una sesión de enfoque activa en este momento.',
-          textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 15, height: 1.4, color: AppColors.onSurfaceVariant),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildCountdownCard() {
-    return _Card(
-      child: Row(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: AppColors.surfaceContainer,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(Icons.hourglass_top, color: AppColors.primary, size: 24),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(AppSpacing.screen, AppSpacing.lg, AppSpacing.screen, AppSpacing.xl),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'TIEMPO RESTANTE',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.8,
-                    color: AppColors.onSurfaceVariant,
+                // Fase actual
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: onBreak ? p.secondaryFixed : p.primaryFixed,
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
+                  ),
+                  child: Text(
+                    _isPaused ? 'En pausa' : _phaseLabel,
+                    style: t.labelMedium!.copyWith(color: onBreak ? p.onSecondaryFixedVariant : p.onPrimaryFixed),
                   ),
                 ),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: [
-                    Text(
-                      _format(_secondsLeft),
-                      style: TextStyle(
-                        fontSize: 40,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: -1.2,
-                        color: _isPaused ? AppColors.outline : AppColors.primary,
-                        fontFeatures: const [FontFeature.tabularFigures()],
-                      ),
+                const SizedBox(height: AppSpacing.xl),
+
+                // Círculo que "respira"
+                ScaleTransition(
+                  scale: Tween(begin: 0.92, end: 1.0)
+                      .animate(CurvedAnimation(parent: _breath, curve: Curves.easeInOut)),
+                  child: Container(
+                    width: 120,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      color: onBreak ? p.secondaryFixed : p.primaryFixed,
+                      shape: BoxShape.circle,
                     ),
-                    const SizedBox(width: 4),
-                    const Flexible(
-                      child: Text(
-                        'de tu bloque',
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant),
-                      ),
+                    child: Icon(onBreak ? Icons.local_cafe_outlined : Icons.spa_outlined, size: 48, color: accent),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xl),
+
+                // Temporizador (el lector de pantalla lo lee en palabras)
+                Semantics(
+                  label: 'Quedan ${(_secondsLeft / 60).ceil()} minutos',
+                  excludeSemantics: true,
+                  child: Text(
+                    _format(_secondsLeft),
+                    style: t.displaySmall!.copyWith(
+                      fontSize: 64,
+                      color: _isPaused ? p.onSurfaceVariant : accent,
+                      fontFeatures: const [FontFeature.tabularFigures()],
                     ),
-                  ],
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  _isPaused
+                      ? 'Vuelves al enfoque en ${_format(_pauseSecondsLeft)}'
+                      : onBreak
+                          ? 'Levántate, estírate o toma agua.'
+                          : 'Respira profundo y enfócate en tu objetivo.',
+                  textAlign: TextAlign.center,
+                  style: t.bodyMedium!.copyWith(color: p.onSurfaceVariant),
+                ),
+                const SizedBox(height: AppSpacing.xl),
+
+                // Objetivo
+                AppCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Tu objetivo', style: t.labelMedium!.copyWith(color: p.primary)),
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(widget.task.goal, style: t.titleMedium),
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(widget.task.title, style: t.bodySmall),
+                      if (widget.task.blockDistractions && widget.task.blockedApps.isNotEmpty && !onBreak) ...[
+                        const SizedBox(height: AppSpacing.md),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(Icons.lock_outline, size: 16, color: p.tertiary),
+                            const SizedBox(width: AppSpacing.xs),
+                            Expanded(
+                              child: Text(
+                                'Bloqueadas: ${widget.task.blockedApps.join(', ')}',
+                                style: t.bodySmall!.copyWith(color: p.tertiary),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xl),
+
+                // Acciones
+                SizedBox(
+                  width: double.infinity,
+                  child: onBreak
+                      ? OutlinedButton.icon(
+                          onPressed: _skipBreak,
+                          icon: Icon(_isLastPhase ? Icons.flag_outlined : Icons.skip_next_rounded),
+                          label: Text(_isLastPhase ? 'Terminar sesión' : 'Saltar descanso'),
+                        )
+                      : OutlinedButton.icon(
+                          onPressed: _toggleEmergencyPause,
+                          icon: Icon(_isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded),
+                          label: Text(_isPaused
+                              ? 'Reanudar ahora (${_format(_pauseSecondsLeft)})'
+                              : 'Pausa de emergencia (2 min)'),
+                        ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                TextButton.icon(
+                  onPressed: _confirmAbandon,
+                  style: TextButton.styleFrom(foregroundColor: p.error),
+                  icon: const Icon(Icons.close_rounded, size: 18),
+                  label: const Text('Abandonar sesión'),
                 ),
               ],
             ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: _isPaused ? AppColors.tertiaryFixed : AppColors.secondaryFixed,
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 6,
-                      height: 6,
-                      decoration: BoxDecoration(
-                        color: _isPaused ? AppColors.tertiary : AppColors.secondary,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      _isPaused ? 'En pausa' : 'En curso',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: _isPaused ? AppColors.tertiary : AppColors.onSecondaryFixedVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 4),
-              const Text('Pomodoro #1', style: TextStyle(fontSize: 12, color: AppColors.outline)),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCommitmentCard() {
-    final (chipBg, chipFg) = switch (widget.task.priority) {
-      'Alta' => (AppColors.errorContainer, const Color(0xFF93000A)),
-      'Media' => (AppColors.secondaryFixed, AppColors.onSecondaryFixedVariant),
-      _ => (AppColors.surfaceContainerHigh, AppColors.onSurfaceVariant),
-    };
-
-    return _Card(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.flag, color: AppColors.primary, size: 20),
-              const SizedBox(width: 6),
-              const Expanded(
-                child: Text(
-                  'TU COMPROMISO',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.8,
-                    color: AppColors.primary,
-                  ),
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(color: chipBg, borderRadius: BorderRadius.circular(999)),
-                child: Text(
-                  '${widget.task.priority} prioridad',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: chipFg),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceContainerLow,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              '“${widget.task.goal}”',
-              style: const TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.w600,
-                fontStyle: FontStyle.italic,
-                height: 1.35,
-                color: AppColors.onSurface,
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: AppColors.secondaryFixed,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: const Icon(Icons.task_alt, size: 16, color: AppColors.secondary),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Tarea vinculada',
-                      style: TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant),
-                    ),
-                    Text(
-                      widget.task.title,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.onSurface,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFrictionCard() {
-    final apps = widget.task.blockedApps;
-    final appName = apps.isNotEmpty ? apps.first : 'otra app';
-
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceContainer,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(Icons.psychology_alt, color: AppColors.secondary, size: 22),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              '¿Realmente necesitas abrir $appName ahora? Esta pausa romperá tu racha '
-              'de concentración y retrasará tu descanso.',
-              style: const TextStyle(fontSize: 14, height: 1.4, color: AppColors.onSurface),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPauseButton() {
-    return Material(
-      color: _isPaused ? AppColors.primary : AppColors.surfaceContainerLow,
-      borderRadius: BorderRadius.circular(10),
-      child: InkWell(
-        onTap: _togglePause,
-        borderRadius: BorderRadius.circular(10),
-        child: SizedBox(
-          height: 52,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                _isPaused ? Icons.play_circle_outline : Icons.pause_circle_outline,
-                size: 20,
-                color: _isPaused ? Colors.white : AppColors.primary,
-              ),
-              const SizedBox(width: 8),
-              Flexible(
-                child: Text(
-                  _isPaused
-                      ? 'Reanudar ahora (${_format(_pauseSecondsLeft)})'
-                      : 'Pausa de emergencia de 2 minutos',
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: _isPaused ? Colors.white : AppColors.primary,
-                  ),
-                ),
-              ),
-            ],
           ),
         ),
       ),
@@ -565,20 +369,43 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen>
   }
 }
 
-class _Card extends StatelessWidget {
-  final Widget child;
-  const _Card({required this.child});
+/// Pregunta final: "¿Cumpliste tu objetivo?" (Sí / En parte / No).
+class _GoalResultDialog extends StatelessWidget {
+  final String goal;
+  const _GoalResultDialog({required this.goal});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: AppColors.cardShadow,
+    final p = context.palette;
+    final t = Theme.of(context).textTheme;
+
+    return AlertDialog(
+      icon: Icon(Icons.emoji_events_outlined, color: p.primary, size: 36),
+      title: const Text('¡Sesión completada!'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('¿Cumpliste tu objetivo?', textAlign: TextAlign.center, style: t.titleMedium),
+          const SizedBox(height: AppSpacing.xs),
+          Text('"$goal"', textAlign: TextAlign.center, style: t.bodyMedium!.copyWith(color: p.onSurfaceVariant)),
+          const SizedBox(height: AppSpacing.xl),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, GoalResult.yes),
+            child: const Text('Sí, lo cumplí'),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          OutlinedButton(
+            onPressed: () => Navigator.pop(context, GoalResult.partly),
+            child: const Text('En parte'),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          TextButton(
+            onPressed: () => Navigator.pop(context, GoalResult.no),
+            child: const Text('No lo cumplí'),
+          ),
+        ],
       ),
-      child: child,
     );
   }
 }

@@ -1,175 +1,166 @@
-# Especificación de diseño: refactorización de un formulario con `Form` en Flutter
-Alejandra Arriola, Alisson Quijano, Gabriel Martínez, Christian Renderos y Melisa Rivas
+# Enfoque — App de productividad para estudiantes
 
-**Proyecto:** App de enfoque y productividad para estudiantes  
-**Actividad:** Refactoriza un formulario con Form  
-**Fecha:** 6 de octubre de 2026  
-**Tecnología:** Flutter (Dart)  
+Aplicación móvil desarrollada en **Flutter** que ayuda a estudiantes a mantener sesiones de estudio concentradas, ligando cada sesión a una tarea concreta y bloqueando las apps que los distraen.
+
+**Equipo (Grupo 6):** Alejandra Arriola · Alisson Quijano · Gabriel Martínez · Christian Renderos · Melisa Rivas
 
 ---
 
-## 1. Contexto del proyecto y por qué elegimos este formulario
+## ¿Qué problema resuelve?
 
-### 1.1 Alcance
-Es *"Una aplicación Android desarrollada en Flutter, de uso individual y sin registro, que no depende de la conexión a internet..."*
-* Y en lo que queda **fuera de alcance** aparece *"Cuenta de usuario con login social, sincronización multidispositivo..."*
+Los estudiantes que estudian solos suelen carecer de una rutina sostenida de organización y concentración. Muchos ya probaron técnicas como Pomodoro, pero fallan porque **nada les impide abrir la app que los distrae**.
 
-O sea, la app funciona completamente offline y no maneja cuentas de usuario.
+Enfoque está pensada para estudiantes de bachillerato y universidad (aprox. 15 a 25 años) y funciona **100% offline**: no requiere cuenta ni conexión a internet, y todos los datos viven en el dispositivo.
 
-### 1.2 El formulario que elegimos
-En su lugar trabajamos con el formulario que está en el centro de todo el flujo de la app: el **formulario para crear una tarea con bloqueo de aplicaciones**.
+### Flujo principal
 
-Este formulario toca dos módulos del proyecto:
-* Tareas y persistencia local 
-* Bloqueo de apps y permisos nativos 
+1. El usuario elige o crea una tarea.
+2. Declara qué quiere lograr en esa sesión.
+3. Inicia una sesión de enfoque con las apps distractoras bloqueadas.
+4. Al terminar, la sesión queda registrada en el historial (completada o abandonada).
 
 ---
 
-## 2. Paso 1: el formulario base (antes de refactorizar)
+## Pantallas actuales
 
-Así se vería una versión básica del formulario, sin ninguna estructura. Son `TextField` sueltos que leen el texto con controladores, pero no hay nada que valide los datos antes de guardarlos:
+| Pantalla | Descripción |
+| :--- | :--- |
+| **Bienvenida** | Entrada a la app en Modo Invitado (offline). |
+| **Tareas** | Inicio: saludo, Pomodoro rápido, estado del bloqueo y lista de tareas con filtros por prioridad. |
+| **Nueva** | Formulario para crear una tarea con validaciones (título, objetivo, duración, prioridad, etiquetas y apps a bloquear). |
+| **Sesión Activa** | Se abre con "Guardar e Iniciar Enfoque": temporizador real, compromiso de la tarea, pausa de emergencia de 2 minutos y opción de abandonar. |
+| **Enfoque** | Pestaña en construcción. |
+| **Historial** | Resumen semanal: métricas, actividad diaria, tiempo por área y sesiones recientes. |
+| **Perfil de invitado** | Almacenamiento local, ajustes y reinicio de datos. |
 
-```dart
-// Estado inicial típico (con huecos y sin validación centralizada):
-Column(
-  children: [
-    TextField(
-      controller: _titleController,
-      decoration: InputDecoration(labelText: 'Título de la tarea'),
-    ),
-    TextField(
-      controller: _goalController,
-      decoration: InputDecoration(labelText: '¿Qué quieres lograr?'),
-    ),
-    TextField(
-      controller: _durationController,
-      decoration: InputDecoration(labelText: 'Duración (minutos)'),
-    ),
-    ElevatedButton(
-      onPressed: () {
-        // Guarda directamente sin verificar si los datos son válidos
-        guardarTarea();
-      },
-      child: Text('Guardar Tarea'),
-    ),
-  ],
-)
+> **Estado:** las pantallas son navegables y sus botones responden, pero por ahora usan datos de ejemplo. La persistencia local (SQLite), el bloqueo nativo de apps (Kotlin) y las notificaciones locales se integrarán en las siguientes etapas.
+
+---
+
+## Requisitos
+
+| Herramienta | Versión |
+| :--- | :--- |
+| Flutter | **3.47.7** o más reciente (canal `stable`) |
+| Dart | Incluido con Flutter |
+| Android | Android Studio con Android SDK (el proyecto usa Gradle 9.3.1 y Java 17+) |
+| iOS (solo macOS) | Xcode y CocoaPods; iOS 15.0 o superior |
+
+Verifica tu entorno con:
+
+```bash
+flutter --version
+flutter doctor
 ```
 
----
-
-## 3. Paso 2: los huecos que encontramos
-
-Estas son las entradas inválidas que el formulario debería rechazar antes de guardar la tarea.
-
-### Campo 1: título de la tarea
-* **Hueco 1.1, vacío o solo espacios:** el usuario deja el campo en blanco o escribe nada más espacios (`"   "`).
-* **Hueco 1.2, muy corto:** títulos de menos de 3 caracteres (como `"a"` o `"x1"`), que no dicen claramente de qué se trata la tarea.
-* **Hueco 1.3, muy largo:** títulos de más de 50 caracteres, que se ven mal en las listas y en el resto de la interfaz.
-
-### Campo 2: el objetivo ("¿Qué quieres lograr?")
-* **Hueco 2.1, vacío o de una sola palabra:** el usuario no pone nada o solo escribe `"estudiar"`. Eso va en contra de la idea misma de la app, porque cada tarea necesita una meta concreta para que el estudiante no se disperse.
-* **Hueco 2.2, muy corto:** metas de menos de 10 caracteres, que no alcanzan a describir un entregable claro.
-
-### Campo 3: duración estimada de la sesión (en minutos)
-* **Hueco 3.1, no es un número:** cosas como `"veinticinco"`, `"25 min"` o caracteres especiales.
-* **Hueco 3.2, cero o negativo:** valores como `0` o `-15`.
-* **Hueco 3.3, duraciones poco realistas:** menos de 5 minutos no alcanza para un bloque de estudio, y más de 180 minutos son tres horas seguidas sin descanso, lo cual choca con la metodología de estudio que sigue la app.
-* **Hueco 3.4, decimales:** valores como `25.5`, cuando el temporizador trabaja con minutos enteros.
-
-### Componente extra: selector de apps a bloquear
-* **Hueco 4.1, ninguna app seleccionada:** si se guarda la tarea sin elegir qué apps bloquear, se pierde el propósito principal del sistema de bloqueo.
+> **Importante:** todo el equipo debe usar la misma versión de Flutter. Si tienes una más antigua, actualízala con `flutter upgrade`.
 
 ---
 
-## 4. Paso 4: comparación de reglas alternativas
+## Cómo correr el proyecto
 
-Comparamos tres opciones:
+### 1. Clonar e instalar dependencias
 
-| Criterio | Opción A: equilibrada (la que elegimos) | Opción B: estricta | Opción C: permisiva |
-| :--- | :--- | :--- | :--- |
-| **Título** | Entre 3 y 50 caracteres, con `trim()`. | Entre 5 y 40 caracteres y la primera letra en mayúscula. | Solo `trim().isNotEmpty`. |
-| **Objetivo** | Mínimo 10 caracteres (`trim().length >= 10`). | Mínimo 20 caracteres y al menos 3 palabras. | Solo `trim().isNotEmpty`. |
-| **Duración** | Entero entre 5 y 180 minutos. | Múltiplos de 5 o bloques fijos (25, 50, 90). | Cualquier entero mayor que 0. |
-| **Apps bloqueadas** | Al menos 1 app. | Mínimo 2 apps. | Puede ser 0 (es opcional). |
-| **¿Aplica?** | **Sí.** Evita datos erróneos sin volver lento el uso de la app, que es lo que buscan estudiantes de universidad y bachillerato. | **No, es demasiado rígida.** Exigir reglas de ortografía o limitar las duraciones puede frustrar al estudiante. | **No, se queda corta.** Deja pasar datos basura como `"a"`, sesiones de `1` minuto o de `9999` minutos. |
+```bash
+git clone https://github.com/Chocolatinax/AppEnfoque.git
+cd AppEnfoque
+flutter pub get
+```
 
----
+### 2a. Correr en Android
 
-## 5. Paso 3: la refactorización con `Form`, `GlobalKey`, `TextFormField` y `validator`
+1. Abre **Android Studio → Device Manager** e inicia un emulador (o conecta un teléfono Android con *Depuración USB* activada).
+2. Verifica que Flutter lo detecte:
+   ```bash
+   flutter devices
+   ```
+3. Corre la app:
+   ```bash
+   flutter run
+   ```
+   Si hay varios dispositivos conectados, elige uno con `flutter run -d <id-del-dispositivo>`.
 
-### 5.1 Cómo está armada la solución
-1. **`GlobalKey<FormState> _formKey = GlobalKey<FormState>();`**: es la llave que nos da acceso al estado del formulario y nos permite validar todos sus campos de una sola vez.
-2. **`Form(key: _formKey, child: ...)`**: es el widget que agrupa los campos y se encarga de manejar la validación.
-3. **`TextFormField`**: reemplaza al `TextField` y trae la propiedad `validator: (String? value) -> String?`. Si el dato está bien, devuelve `null`; si no, devuelve el mensaje de error que se le muestra al usuario.
-4. **Validación al tocar "Guardar"**:
-   ```dart
-   if (_formKey.currentState!.validate()) {
-     // Datos válidos en todos los campos, proceder a guardar
-   }
+Para generar un APK de prueba:
+
+```bash
+flutter build apk --debug
+```
+
+El archivo queda en `build/app/outputs/flutter-apk/app-debug.apk`.
+
+### 2b. Correr en iOS (solo macOS)
+
+1. Instala las dependencias nativas:
+   ```bash
+   cd ios && pod install && cd ..
+   ```
+2. Abre el simulador:
+   ```bash
+   open -a Simulator
+   ```
+3. Corre la app:
+   ```bash
+   flutter run
    ```
 
-### 5.2 Las reglas de validación (`validator`)
+Para correr en un iPhone físico, abre `ios/Runner.xcworkspace` en Xcode, selecciona tu equipo en *Signing & Capabilities* y luego ejecuta `flutter run`.
 
-```dart
-// 1. Validador para Título
-String? validateTitle(String? value) {
-  final trimmed = value?.trim() ?? '';
-  if (trimmed.isEmpty) {
-    return 'Por favor ingresa el título de la tarea';
-  }
-  if (trimmed.length < 3) {
-    return 'El título debe tener al menos 3 caracteres';
-  }
-  if (trimmed.length > 50) {
-    return 'El título no puede superar los 50 caracteres';
-  }
-  return null;
-}
+---
 
-// 2. Validador para Declaración de Objetivo
-String? validateGoal(String? value) {
-  final trimmed = value?.trim() ?? '';
-  if (trimmed.isEmpty) {
-    return 'Declara qué quieres lograr en esta sesión';
-  }
-  if (trimmed.length < 10) {
-    return 'Sé más específico: escribe al menos 10 caracteres';
-  }
-  return null;
-}
+## Pruebas y análisis
 
-// 3. Validador para Duración (minutos)
-String? validateDuration(String? value) {
-  final trimmed = value?.trim() ?? '';
-  if (trimmed.isEmpty) {
-    return 'Ingresa la duración estimada';
-  }
-  final number = int.tryParse(trimmed);
-  if (number == null) {
-    return 'Ingresa un número entero válido (sin letras ni decimales)';
-  }
-  if (number < 5 || number > 180) {
-    return 'La duración debe estar entre 5 y 180 minutos';
-  }
-  return null;
-}
+```bash
+flutter analyze   # Revisa errores y advertencias del código
+flutter test      # Corre las pruebas unitarias y de widgets
+dart format lib   # Da formato al código
 ```
 
 ---
 
-## 6. Casos de prueba
+## Solución de problemas
 
-*"Comprueba que al menos tres campos rechacen datos inválidos antes de guardar."* Estos son los casos con los que lo comprobamos:
+| Problema | Solución |
+| :--- | :--- |
+| `Unsupported class file major version 69` en Android | Tu copia del proyecto tiene la configuración vieja de Android. Haz `git pull` y luego `flutter clean`. |
+| Errores raros después de actualizar Flutter o hacer `git pull` | `flutter clean && flutter pub get` |
+| Errores de CocoaPods en iOS | `cd ios && pod install --repo-update && cd ..` |
+| `flutter run` no encuentra dispositivos | Abre el emulador o simulador primero y revisa con `flutter devices`. |
 
-| Caso | Campo | Lo que escribimos | Lo que debería pasar | ¿Lo rechaza antes de guardar? |
-| :--- | :--- | :--- | :--- | :--- |
-| **TC-1** | Título | `"   "` (solo espacios) | Error: `"Por favor ingresa el título de la tarea"` | Sí |
-| **TC-2** | Título | `"AB"` (2 caracteres) | Error: `"El título debe tener al menos 3 caracteres"` | Sí |
-| **TC-3** | Objetivo | `""` (vacío) | Error: `"Declara qué quieres lograr en esta sesión"` | Sí |
-| **TC-4** | Objetivo | `"leer"` (4 caracteres) | Error: `"Sé más específico: escribe al menos 10 caracteres"` | Sí |
-| **TC-5** | Duración | `"veinticinco"` | Error: `"Ingresa un número entero válido (sin letras ni decimales)"` | Sí |
-| **TC-6** | Duración | `"-10"` o `"3"` | Error: `"La duración debe estar entre 5 y 180 minutos"` | Sí |
-| **TC-7** | Duración | `"200"` | Error: `"La duración debe estar entre 5 y 180 minutos"` | Sí |
-| **TC-8** | Apps bloqueadas | 0 apps seleccionadas | Error o aviso: `"Debes seleccionar al menos una app para bloquear"` | Sí |
-| **TC-9** | Todos | Título: `"Estudiar Cálculo III"`<br>Objetivo: `"Resolver los 5 ejercicios de integrales triples"`<br>Duración: `"45"`<br>Apps: `["Instagram", "TikTok"]` | El formulario es válido (`validate() == true`) y la tarea se guarda. | No, se guarda sin problema |
+---
+
+## Estructura del proyecto
+
+```
+lib/
+├── main.dart                     # Punto de entrada (inicia en la Bienvenida)
+├── models/                       # Modelos de datos (Task, BlockedAppItem)
+├── screens/                      # Pantallas de la app
+│   ├── welcome_screen.dart
+│   ├── main_shell.dart           # Contenedor con la barra de navegación inferior
+│   ├── tasks_screen.dart
+│   ├── focus_screen.dart
+│   ├── history_screen.dart
+│   ├── profile_screen.dart
+│   └── active_session_screen.dart
+├── theme/app_colors.dart         # Paleta de colores centralizada
+├── utils/                        # Validadores del formulario y avisos (SnackBars)
+└── widgets/                      # Formulario "Nueva" y componentes compartidos
+test/                             # Pruebas unitarias y de widgets
+docs/                             # Documentación de entregas
+```
+
+---
+
+## Stack tecnológico
+
+- **Flutter (Dart):** interfaz y lógica de la app.
+- **Kotlin (Platform Channels):** bloqueo de apps con APIs nativas de Android *(próximamente)*.
+- **SQLite:** persistencia local de tareas y sesiones *(próximamente)*.
+- **flutter_local_notifications:** avisos de inicio y fin de sesión *(próximamente)*.
+- **Sin backend:** la app es de uso individual, sin registro y sin sincronización en la nube.
+
+---
+
+## Documentación
+
+- [Especificación: refactorización del formulario con `Form`](docs/especificacion-formulario.md)

@@ -111,6 +111,28 @@ Para correr en un iPhone físico, abre `ios/Runner.xcworkspace` en Xcode, selecc
 
 ---
 
+## Bloqueo de apps (solo Android)
+
+Durante una sesión de enfoque, Floria detecta si abres una app bloqueada y te muestra un recordatorio (requerimiento R1).
+Funciona con un **Servicio de Accesibilidad** de Android escrito en Kotlin (`android/app/src/main/kotlin/`),
+conectado a Flutter por el canal `floria/app_blocker` (`lib/services/app_blocker.dart`).
+
+- El bloqueo se activa durante el enfoque y se libera en los descansos, en la pausa de emergencia y al terminar la sesión.
+- El servicio solo lee el nombre de la app que se abre. No lee el contenido de las pantallas ni envía datos.
+- En iOS el bloqueo no está disponible (la versión iOS está fuera de alcance). El resto de la app funciona igual.
+
+### Cómo probarlo
+
+1. Usa un teléfono Android o un emulador **con Google Play** (Android Studio → Device Manager), que ya trae YouTube.
+2. Corre la app con `flutter run` y crea una tarea con **YouTube** marcada en "Bloquear apps".
+3. Toca "Iniciar enfoque". La primera vez, Floria pide activar el permiso:
+   Ajustes → Accesibilidad → **Floria: bloqueo de distracciones** → activar.
+4. Con la sesión corriendo, abre YouTube. Floria debe aparecer en menos de 2 segundos con el recordatorio.
+5. En la terminal de `flutter run` aparece la medición: `[R1] Recordatorio de YouTube mostrado en ... ms`.
+
+> **Android 13 o más nuevo:** si el permiso aparece bloqueado ("Ajuste restringido"), abre
+> Ajustes → Apps → Floria → menú ⋮ → **Permitir ajustes restringidos**, y vuelve a intentarlo.
+
 ## Pruebas y análisis
 
 ```bash

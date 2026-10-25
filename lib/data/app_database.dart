@@ -12,9 +12,10 @@ import 'package:sqflite/sqflite.dart';
 /// Versiones:
 /// - v1: tablas iniciales.
 /// - v2: modo de tiempo (libre / Pomodoro) en tareas y tiempo real de enfoque en sesiones.
+/// - v3: paquetes de Android de las apps bloqueadas (cualquier app instalada).
 class AppDatabase {
   static const String fileName = 'floria.db';
-  static const int version = 2;
+  static const int version = 3;
 
   final Database db;
 
@@ -53,6 +54,7 @@ class AppDatabase {
         tags               TEXT NOT NULL DEFAULT '[]',
         block_distractions INTEGER NOT NULL DEFAULT 1,
         blocked_apps       TEXT NOT NULL DEFAULT '[]',
+        blocked_packages   TEXT NOT NULL DEFAULT '[]',
         is_done            INTEGER NOT NULL DEFAULT 0,
         created_at         TEXT NOT NULL
       )
@@ -81,6 +83,9 @@ class AppDatabase {
       await db.execute("ALTER TABLE tasks ADD COLUMN timer_mode TEXT NOT NULL DEFAULT 'libre'");
       await db.execute('ALTER TABLE tasks ADD COLUMN pomodoro_rounds INTEGER NOT NULL DEFAULT 0');
       await db.execute('ALTER TABLE sessions ADD COLUMN focus_seconds INTEGER NOT NULL DEFAULT 0');
+    }
+    if (oldVersion < 3) {
+      await db.execute("ALTER TABLE tasks ADD COLUMN blocked_packages TEXT NOT NULL DEFAULT '[]'");
     }
   }
 

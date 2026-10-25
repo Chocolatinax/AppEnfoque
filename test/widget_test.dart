@@ -59,13 +59,19 @@ void main() {
   testWidgets('Exige al menos una app si el bloqueo está activo', (tester) async {
     await pumpForm(tester);
 
-    // Desmarcar las apps que vienen seleccionadas
-    for (final app in ['Instagram', 'TikTok', 'YouTube']) {
-      final tile = find.widgetWithText(CheckboxListTile, app);
-      await tester.ensureVisible(tile);
-      await tester.tap(tile);
-      await tester.pumpAndSettle();
-    }
+    // Por defecto vienen marcadas las recomendadas
+    expect(find.text('3 apps elegidas'), findsOneWidget);
+
+    // Abrir la pantalla de apps y quitar todas
+    await tester.ensureVisible(find.text('3 apps elegidas'));
+    await tester.tap(find.text('3 apps elegidas'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Ninguna'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Listo (ninguna)'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Ninguna app elegida'), findsOneWidget);
 
     final saveButton = find.text('Guardar e iniciar enfoque');
     await tester.ensureVisible(saveButton);

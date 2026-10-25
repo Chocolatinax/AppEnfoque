@@ -7,7 +7,7 @@ import '../theme/app_spacing.dart';
 import '../widgets/common/app_card.dart';
 import '../widgets/common/enfoque_app_bar.dart';
 import '../widgets/common/priority_chip.dart';
-import 'active_session_screen.dart';
+import 'session_launcher.dart';
 import 'main_shell.dart';
 
 /// Pestaña "Enfoque": elegir una tarea pendiente y empezar la sesión.
@@ -24,11 +24,7 @@ class FocusScreen extends StatelessWidget {
     required this.onOpenSettings,
   });
 
-  void _start(BuildContext context, Task task) {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => ActiveSessionScreen(task: task)),
-    );
-  }
+  void _start(BuildContext context, Task task) => launchFocusSession(context, task);
 
   @override
   Widget build(BuildContext context) {

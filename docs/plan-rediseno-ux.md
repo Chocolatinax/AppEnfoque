@@ -184,8 +184,9 @@ Cada fase termina con `flutter analyze` y `flutter test` limpios, y se prueba en
 
 ### Fase 4: pantallas nuevas en alcance
 - [x] Cierre de sesión "¿Cumpliste tu objetivo?" (R2).
-- [ ] Recordatorio de app bloqueada (R1). Coordinar con el módulo de Kotlin.
-- [ ] Permisos de bloqueo y notificaciones.
+- [x] Recordatorio de app bloqueada (R1): Servicio de Accesibilidad en Kotlin + canal `floria/app_blocker` + pantalla de recordatorio.
+- [x] Permisos de bloqueo (Ajustes → Permisos de bloqueo, y aviso al iniciar una sesión).
+- [ ] Permiso y notificaciones locales de inicio y fin de sesión.
 
 ### Fase 5: accesibilidad
 - [ ] Aplicar la tabla de la sección 5.

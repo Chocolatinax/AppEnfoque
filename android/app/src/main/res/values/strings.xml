@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="blocker_service_label">Floria: bloqueo de distracciones</string>
+    <string name="blocker_service_description">Floria usa este permiso solo para saber qué app abres durante una sesión de enfoque. Si es una de las apps que elegiste bloquear, te muestra un recordatorio para volver a tu tarea. Floria no lee el contenido de tus pantallas ni envía datos a internet.</string>
+</resources>

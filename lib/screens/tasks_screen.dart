@@ -6,7 +6,7 @@ import '../theme/app_spacing.dart';
 import '../widgets/common/app_card.dart';
 import '../widgets/common/enfoque_app_bar.dart';
 import '../widgets/common/priority_chip.dart';
-import 'active_session_screen.dart';
+import 'session_launcher.dart';
 import 'main_shell.dart';
 
 /// Pantalla de inicio: Tareas.
@@ -29,14 +29,10 @@ class TasksScreen extends StatefulWidget {
 }
 
 class _TasksScreenState extends State<TasksScreen> {
-  static const _filters = ['Todas', 'Alta', 'Media', 'Baja'];
+  static const _filters = ['Todas', 'Baja', 'Media', 'Alta'];
   String _filter = 'Todas';
 
-  void _startSession(Task task) {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => ActiveSessionScreen(task: task)),
-    );
-  }
+  void _startSession(Task task) => launchFocusSession(context, task);
 
   // ---------- Saludo y fecha en español ----------
   static const _weekdays = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];

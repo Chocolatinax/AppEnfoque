@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import '../data/task_repository.dart';
 import '../models/task_model.dart';
-import '../screens/active_session_screen.dart';
+import '../data/blockable_apps.dart';
+import '../screens/app_picker_screen.dart';
+import '../services/app_blocker.dart';
+import '../screens/session_launcher.dart';
 import '../theme/app_palette.dart';
 import '../theme/app_spacing.dart';
 import '../utils/form_validators.dart';
@@ -35,12 +38,50 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
   bool _blockDistractions = true;
   String? _appsError;
 
-  final List<BlockedAppItem> _apps = [
-    BlockedAppItem(name: 'Instagram', packageName: 'com.instagram.android', isBlocked: true),
-    BlockedAppItem(name: 'TikTok', packageName: 'com.zhiliaoapp.musically', isBlocked: true),
-    BlockedAppItem(name: 'YouTube', packageName: 'com.google.android.youtube', isBlocked: true),
-    BlockedAppItem(name: 'X (Twitter)', packageName: 'com.twitter.android'),
-  ];
+  // Apps que se pueden bloquear (en Android, las instaladas en el teléfono)
+  List<InstalledApp> _availableApps = [];
+  final Set<String> _selectedPackages = {};
+  bool _appsLoaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadApps();
+  }
+
+  /// Carga las apps y marca por defecto las recomendadas que estén instaladas.
+  Future<void> _loadApps() async {
+    final apps = await AppBlocker.instance.getLaunchableApps();
+    if (!mounted) return;
+    setState(() {
+      _availableApps = apps;
+      _selectedPackages
+        ..clear()
+        ..addAll(AppBlocker.instance.isSupported
+            ? apps.where((a) => a.isRecommended).map((a) => a.packageName)
+            : apps.where((a) => BlockableApps.defaultSelection.contains(a.name)).map((a) => a.packageName));
+      _appsLoaded = true;
+    });
+  }
+
+  Future<void> _openAppPicker() async {
+    final result = await Navigator.of(context).push<Set<String>>(
+      MaterialPageRoute(
+        builder: (_) => AppPickerScreen(apps: _availableApps, initialSelection: _selectedPackages),
+      ),
+    );
+    if (result == null || !mounted) return;
+    setState(() {
+      _selectedPackages
+        ..clear()
+        ..addAll(result);
+      _appsError = null;
+    });
+  }
+
+  /// Apps elegidas, en el orden de la lista.
+  List<InstalledApp> get _chosenApps =>
+      _availableApps.where((a) => _selectedPackages.contains(a.packageName)).toList();
 
   @override
   void dispose() {
@@ -52,7 +93,7 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
 
   bool get _isPomodoro => _timerMode == TimerMode.pomodoro;
 
-  List<String> get _selectedApps => _apps.where((a) => a.isBlocked).map((a) => a.name).toList();
+  List<String> get _selectedApps => _chosenApps.map((a) => a.name).toList();
 
   int get _pomodoroFocusMinutes => _rounds * Pomodoro.focusMinutes;
 
@@ -155,6 +196,7 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
       pomodoroRounds: _isPomodoro ? _rounds : 0,
       blockDistractions: _blockDistractions,
       blockedApps: _blockDistractions ? _selectedApps : const [],
+      blockedPackages: _blockDistractions ? _chosenApps.map((a) => a.packageName).toList() : const [],
     );
 
     // 3. Guardar en SQLite
@@ -162,10 +204,13 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
     if (!mounted) return;
 
     if (startNow) {
-      // La sesión reemplaza al formulario: al terminar se vuelve a Tareas
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => ActiveSessionScreen(task: task)),
-      );
+      // La sesión reemplaza al formulario: al terminar se vuelve a Tareas.
+      // Si no se pudo iniciar (por ejemplo, canceló el permiso), la tarea ya quedó guardada.
+      final started = await launchFocusSession(context, task, replace: true);
+      if (!started && mounted) {
+        showAppSnackBar(context, 'Tarea guardada en tu lista');
+        if (Navigator.of(context).canPop()) Navigator.of(context).pop();
+      }
     } else {
       showAppSnackBar(context, 'Tarea guardada en tu lista');
       if (Navigator.of(context).canPop()) Navigator.of(context).pop();
@@ -232,9 +277,9 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
             const _SectionTitle('Prioridad'),
             SegmentedButton<String>(
               segments: const [
-                ButtonSegment(value: 'Alta', label: Text('Alta')),
-                ButtonSegment(value: 'Media', label: Text('Media')),
                 ButtonSegment(value: 'Baja', label: Text('Baja')),
+                ButtonSegment(value: 'Media', label: Text('Media')),
+                ButtonSegment(value: 'Alta', label: Text('Alta')),
               ],
               selected: {_priority},
               showSelectedIcon: false,
@@ -388,16 +433,23 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
           ),
           if (_blockDistractions) ...[
             const Divider(),
-            for (final app in _apps)
-              CheckboxListTile(
-                value: app.isBlocked,
-                title: Text(app.name),
-                controlAffinity: ListTileControlAffinity.leading,
-                onChanged: (v) => setState(() {
-                  app.isBlocked = v ?? false;
-                  _appsError = null;
-                }),
+            ListTile(
+              enabled: _appsLoaded,
+              onTap: _openAppPicker,
+              leading: Icon(Icons.apps_rounded, color: p.primary),
+              title: Text(
+                !_appsLoaded
+                    ? 'Cargando tus apps…'
+                    : _selectedApps.isEmpty
+                        ? 'Ninguna app elegida'
+                        : '${_selectedApps.length} ${_selectedApps.length == 1 ? 'app elegida' : 'apps elegidas'}',
+                style: const TextStyle(fontWeight: FontWeight.w600),
               ),
+              subtitle: _selectedApps.isEmpty
+                  ? const Text('Toca para elegir qué apps bloquear')
+                  : Text(_selectedApps.join(', '), maxLines: 2, overflow: TextOverflow.ellipsis),
+              trailing: const Icon(Icons.chevron_right),
+            ),
           ],
           if (_appsError != null)
             Padding(

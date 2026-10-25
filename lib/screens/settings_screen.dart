@@ -6,6 +6,7 @@ import '../theme/app_spacing.dart';
 import '../utils/ui_feedback.dart';
 import '../widgets/common/app_card.dart';
 import 'about_screen.dart';
+import 'blocking_permission_screen.dart';
 import 'welcome_screen.dart';
 
 /// Ajustes de la app (antes "Perfil de invitado").
@@ -91,7 +92,9 @@ class SettingsScreen extends StatelessWidget {
               icon: Icons.shield_outlined,
               title: 'Permisos de bloqueo',
               subtitle: 'Necesarios para bloquear apps durante la sesión',
-              onTap: () => showComingSoon(context, 'La configuración de permisos'),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const BlockingPermissionScreen()),
+              ),
             ),
             _SettingsTile(
               icon: Icons.notifications_outlined,

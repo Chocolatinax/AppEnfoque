@@ -1,13 +1,16 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../data/blockable_apps.dart';
 import '../data/session_repository.dart';
 import '../data/task_repository.dart';
 import '../models/focus_session.dart';
 import '../models/task_model.dart';
+import '../services/app_blocker.dart';
 import '../theme/app_palette.dart';
 import '../theme/app_spacing.dart';
 import '../utils/ui_feedback.dart';
 import '../widgets/common/app_card.dart';
+import 'blocked_app_reminder_screen.dart';
 
 /// Una fase de la sesión: enfoque o descanso.
 class _Phase {
@@ -45,6 +48,26 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen> with SingleTi
   bool _ended = false;
   Timer? _timer;
 
+  // Bloqueo de apps (solo Android)
+  StreamSubscription<BlockedAppEvent>? _blockedSub;
+  bool _blockingActive = false;
+  bool _reminderOpen = false;
+  ValueNotifier<BlockedAppEvent>? _reminderEvent; // app que muestra el recordatorio abierto
+  late final ValueNotifier<int> _secondsLeftNotifier = ValueNotifier(_secondsLeft);
+  late final List<String> _blockedPackages = !widget.task.blockDistractions
+      ? const []
+      : widget.task.blockedPackages.isNotEmpty
+          ? widget.task.blockedPackages
+          // Tareas creadas antes de guardar paquetes: traducir los nombres del catálogo
+          : BlockableApps.packagesFor(widget.task.blockedApps);
+
+  /// Nombre visible de una app bloqueada a partir de su paquete.
+  String _appNameFor(String package) {
+    final index = widget.task.blockedPackages.indexOf(package);
+    if (index >= 0 && index < widget.task.blockedApps.length) return widget.task.blockedApps[index];
+    return BlockableApps.nameForPackage(package);
+  }
+
   late final AnimationController _breath = AnimationController(
     vsync: this,
     duration: const Duration(seconds: 4),
@@ -73,6 +96,8 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen> with SingleTi
   void initState() {
     super.initState();
     _timer = Timer.periodic(const Duration(seconds: 1), (_) => _tick());
+    _blockedSub = AppBlocker.instance.blockedAppOpened.listen(_onBlockedApp);
+    _syncBlocking();
   }
 
   @override
@@ -89,6 +114,9 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen> with SingleTi
   @override
   void dispose() {
     _timer?.cancel();
+    _blockedSub?.cancel();
+    if (_blockingActive) AppBlocker.instance.stop();
+    _secondsLeftNotifier.dispose();
     _breath.dispose();
     super.dispose();
   }
@@ -109,6 +137,8 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen> with SingleTi
       }
       if (_secondsLeft == 0) _nextPhase();
     });
+    _secondsLeftNotifier.value = _secondsLeft;
+    _syncBlocking();
   }
 
   void _nextPhase() {
@@ -131,6 +161,7 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen> with SingleTi
 
   void _toggleEmergencyPause() {
     setState(() => _pauseSecondsLeft = _isPaused ? 0 : _emergencyPauseSeconds);
+    _syncBlocking();
   }
 
   void _skipBreak() {
@@ -138,6 +169,56 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen> with SingleTi
       _secondsLeft = 0;
       _nextPhase();
     });
+    _syncBlocking();
+  }
+
+  // ---------- Bloqueo de apps ----------
+
+  /// Se bloquea solo durante el enfoque; en descansos, pausas y al terminar se libera.
+  bool get _shouldBlock => !_ended && _phase.isFocus && !_isPaused && _blockedPackages.isNotEmpty;
+
+  void _syncBlocking() {
+    final should = _shouldBlock;
+    if (should == _blockingActive) return;
+    _blockingActive = should;
+    if (should) {
+      AppBlocker.instance.start(_blockedPackages);
+    } else {
+      AppBlocker.instance.stop();
+      // Si empieza un descanso o termina la sesión con el recordatorio abierto, se cierra solo
+      if (_reminderOpen && mounted) {
+        final sessionRoute = ModalRoute.of(context);
+        Navigator.of(context).popUntil((route) => route == sessionRoute);
+      }
+    }
+  }
+
+  /// El usuario abrió una app bloqueada: mostrar la pantalla de recordatorio (R1).
+  Future<void> _onBlockedApp(BlockedAppEvent event) async {
+    if (!mounted || !_blockingActive) return;
+
+    // Si el recordatorio ya está abierto, solo se actualiza con la app nueva
+    if (_reminderOpen) {
+      _reminderEvent?.value = event;
+      return;
+    }
+
+    _reminderOpen = true;
+    final notifier = ValueNotifier(event);
+    _reminderEvent = notifier;
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => BlockedAppReminderScreen(
+          event: notifier,
+          secondsLeft: _secondsLeftNotifier,
+          appNameFor: _appNameFor,
+          goal: widget.task.goal,
+        ),
+      ),
+    );
+    _reminderOpen = false;
+    _reminderEvent = null;
+    notifier.dispose();
   }
 
   // ---------- Cierre de sesión ----------
@@ -203,6 +284,7 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen> with SingleTi
 
     _ended = true;
     _timer?.cancel();
+    _syncBlocking();
     await _record(SessionStatus.abandoned);
     if (!mounted) return;
 

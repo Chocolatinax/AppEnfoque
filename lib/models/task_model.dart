@@ -42,7 +42,8 @@ class Task {
   final int pomodoroRounds; // solo en modo Pomodoro
   final List<String> tags; // ya no se usa en la interfaz (se conserva por compatibilidad)
   final bool blockDistractions;
-  final List<String> blockedApps;
+  final List<String> blockedApps; // nombres visibles ("Instagram")
+  final List<String> blockedPackages; // paquetes de Android ("com.instagram.android"), mismo orden
   final bool isDone;
   final DateTime createdAt;
 
@@ -57,6 +58,7 @@ class Task {
     this.tags = const [],
     this.blockDistractions = true,
     this.blockedApps = const [],
+    this.blockedPackages = const [],
     this.isDone = false,
     DateTime? createdAt,
   }) : createdAt = createdAt ?? DateTime.now();
@@ -87,6 +89,7 @@ class Task {
       tags: tags,
       blockDistractions: blockDistractions,
       blockedApps: blockedApps,
+      blockedPackages: blockedPackages,
       isDone: isDone ?? this.isDone,
       createdAt: createdAt,
     );
@@ -109,6 +112,7 @@ class Task {
       'tags': jsonEncode(tags),
       'block_distractions': blockDistractions ? 1 : 0,
       'blocked_apps': jsonEncode(blockedApps),
+      'blocked_packages': jsonEncode(blockedPackages),
       'is_done': isDone ? 1 : 0,
       'created_at': createdAt.toIso8601String(),
     };
@@ -130,6 +134,7 @@ class Task {
       tags: decodeList(row['tags']),
       blockDistractions: (row['block_distractions'] as int? ?? 1) == 1,
       blockedApps: decodeList(row['blocked_apps']),
+      blockedPackages: decodeList(row['blocked_packages']),
       isDone: (row['is_done'] as int? ?? 0) == 1,
       createdAt: DateTime.parse(row['created_at'] as String),
     );

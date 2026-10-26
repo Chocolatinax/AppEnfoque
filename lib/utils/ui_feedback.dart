@@ -35,12 +35,3 @@ void showAppSnackBar(
     ),
   );
 }
-
-/// Aviso estándar para funciones en alcance que aún no están conectadas.
-void showComingSoon(BuildContext context, [String feature = 'Esta función']) {
-  showAppSnackBar(
-    context,
-    '$feature se conectará en una próxima etapa',
-    icon: Icons.schedule_rounded,
-  );
-}

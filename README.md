@@ -37,7 +37,7 @@ Floria está pensada para estudiantes de bachillerato y universidad (aprox. 15 a
 | **Historial** | Resumen semanal: métricas, actividad diaria, tiempo por área y sesiones recientes. |
 | **Perfil de invitado** | Almacenamiento local, ajustes y reinicio de datos. |
 
-> **Estado:** tareas e historial guardados en SQLite, bloqueo de apps en Android (Kotlin), sesiones que se retoman si se cierra la app y notificaciones locales. Pendiente: editar y borrar tareas, y exportar datos.
+> **Estado:** tareas e historial guardados en SQLite, bloqueo de apps en Android (Kotlin), sesiones que se retoman si se cierra la app y notificaciones locales. También se pueden editar y eliminar tareas.
 
 ---
 

@@ -121,7 +121,7 @@ Se quitan: Pomodoro sin tarea, árboles, frase motivacional y tarjeta de bloqueo
 
 ### 4.7 Perfil y ajustes
 
-- Lista simple: Permisos de bloqueo · Notificaciones · Exportar datos (JSON) · Acerca de · Reiniciar datos.
+- Lista simple: Permisos de bloqueo · Notificaciones · Acerca de · Reiniciar datos. (Se descartó "Exportar datos": los datos son solo locales y no aporta al usuario.)
 - Sin tarjetas de sincronización ni campana.
 
 ### 4.8 Pantallas nuevas (en alcance)

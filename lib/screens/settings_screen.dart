@@ -118,12 +118,6 @@ class SettingsScreen extends StatelessWidget {
           const _SectionLabel('Tus datos'),
           _SettingsGroup(children: [
             _SettingsTile(
-              icon: Icons.file_download_outlined,
-              title: 'Exportar datos',
-              subtitle: 'Guarda una copia de tus tareas e historial (JSON)',
-              onTap: () => showComingSoon(context, 'La exportación de datos'),
-            ),
-            _SettingsTile(
               icon: Icons.delete_outline,
               title: 'Reiniciar datos',
               subtitle: 'Borra todo lo guardado en este teléfono',

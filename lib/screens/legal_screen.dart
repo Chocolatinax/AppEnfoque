@@ -66,14 +66,14 @@ class LegalScreen extends StatelessWidget {
       'No intentes modificar la app para dañar tu teléfono o el de otras personas.',
     ]),
     _LegalSection('4. Bloqueo de apps', [
-      'En Android, Floria puede mostrarte un recordatorio cuando abres una app que elegiste bloquear. '
-          'Es una ayuda para concentrarte, no un control parental: tú decides qué bloquear y puedes '
-          'desactivar el permiso en cualquier momento desde los ajustes del teléfono.',
-      'En iPhone el bloqueo no está disponible. El resto de la app funciona igual.',
+      'El bloqueo es una ayuda para concentrarte, no un control parental: tú eliges qué apps bloquear '
+          'y puedes dejar de usarlo cuando quieras.',
+      'Solo está disponible en Android. En iPhone, el resto de la app funciona igual.',
     ]),
     _LegalSection('5. Tus datos', [
-      'Tus tareas y tu historial se guardan solo en tu teléfono. No tenemos una copia: si desinstalas '
-          'la app, reinicias los datos o pierdes el teléfono, no los podemos recuperar.',
+      'Nosotros no tenemos una copia de tus datos. Si desinstalas la app, reinicias tus datos o pierdes '
+          'el teléfono, no los podremos recuperar.',
+      'Para saber qué guarda Floria y para qué usa cada permiso, lee la Política de privacidad.',
     ]),
     _LegalSection('6. Sin garantías', [
       'Floria se ofrece "tal como está". Hacemos lo posible para que funcione bien, pero puede tener '
@@ -109,7 +109,8 @@ class LegalScreen extends StatelessWidget {
       'Notificaciones: para avisarte que hay una sesión en curso y cuándo termina cada ronda, descanso o sesión.',
       'Accesibilidad (solo Android): para saber qué app abres durante una sesión de enfoque y mostrarte el '
           'recordatorio si es una de las que bloqueaste. Floria solo ve el nombre de la app; no lee lo que hay '
-          'en tu pantalla y no guarda la lista de apps que abres.',
+          'en tu pantalla y no guarda la lista de apps que abres. Puedes quitar este permiso cuando quieras '
+          'en los ajustes del teléfono.',
       'Lista de apps instaladas (solo Android): para que elijas qué apps bloquear. Solo se guardan las que eliges.',
       'Alarmas exactas e inicio del teléfono (solo Android): para que los avisos lleguen a tiempo, incluso si reinicias el teléfono.',
     ]),

@@ -41,7 +41,8 @@ void main() {
       // Las pruebas corren en la computadora (no Android)
       expect(blocker.isSupported, isFalse);
       expect(await blocker.isEnabled(), isFalse);
-      await blocker.start(['com.instagram.android']);
+      await blocker.start(['com.instagram.android'], until: DateTime.now().add(const Duration(minutes: 25)));
+      expect(await blocker.consumePendingBlockedApp(), isNull);
       await blocker.stop();
       await blocker.openSettings();
     });

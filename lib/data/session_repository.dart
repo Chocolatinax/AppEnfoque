@@ -1,5 +1,7 @@
 import 'package:flutter/widgets.dart';
 import '../models/focus_session.dart';
+import '../models/session_clock.dart';
+import 'package:sqflite/sqflite.dart' show ConflictAlgorithm;
 import 'app_database.dart';
 
 /// Acceso a las sesiones de enfoque guardadas (historial).
@@ -57,8 +59,23 @@ class SessionRepository extends ChangeNotifier {
   /// Fecha sin hora (para comparar días).
   static DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
 
+  // ---------- Sesión en curso (R5) ----------
+
+  /// Guarda (o actualiza) la sesión en curso.
+  Future<void> saveActive(ActiveSessionRecord record) =>
+      _database.db.insert('active_session', record.toDbMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+
+  /// Sesión que quedó en curso cuando se cerró la app (o null).
+  Future<ActiveSessionRecord?> loadActive() async {
+    final rows = await _database.db.query('active_session', limit: 1);
+    return rows.isEmpty ? null : ActiveSessionRecord.fromDbMap(rows.first);
+  }
+
+  Future<void> clearActive() => _database.db.delete('active_session');
+
   /// Borra el historial (Ajustes → Reiniciar datos).
   Future<void> clearAll() async {
+    await _database.db.delete('active_session');
     await _database.db.delete('sessions');
     _sessions = [];
     notifyListeners();

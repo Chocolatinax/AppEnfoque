@@ -4,6 +4,7 @@ import '../models/task_model.dart';
 import '../data/blockable_apps.dart';
 import '../screens/app_picker_screen.dart';
 import '../services/app_blocker.dart';
+import 'common/task_delete.dart';
 import '../screens/session_launcher.dart';
 import '../theme/app_palette.dart';
 import '../theme/app_spacing.dart';
@@ -12,12 +13,17 @@ import '../utils/ui_feedback.dart';
 
 /// Formulario "Nueva tarea".
 ///
-/// Sigue la especificación de la entrega del formulario (docs/especificacion-formulario.md):
+/// Sigue la especificación de la entrega del formulario:
 /// `Form` + `GlobalKey<FormState>` + `TextFormField` con `validator`, y la regla de
 /// "al menos una app bloqueada". Se simplificó la interfaz para que no abrume:
 /// solo lo necesario para la tarea principal (título, objetivo, tiempo, prioridad y bloqueo).
+///
+/// Con [initialTask] funciona como "Editar tarea": carga sus datos, guarda los
+/// cambios sobre la misma tarea y permite eliminarla.
 class TaskFormScreen extends StatefulWidget {
-  const TaskFormScreen({super.key});
+  final Task? initialTask;
+
+  const TaskFormScreen({super.key, this.initialTask});
 
   @override
   State<TaskFormScreen> createState() => _TaskFormScreenState();
@@ -43,25 +49,61 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
   final Set<String> _selectedPackages = {};
   bool _appsLoaded = false;
 
+  bool get _isEditing => widget.initialTask != null;
+
   @override
   void initState() {
     super.initState();
+    final task = widget.initialTask;
+    if (task != null) {
+      // Editar tarea: cargar sus datos en el formulario
+      _titleController.text = task.title;
+      _goalController.text = task.goal;
+      _timerMode = task.timerMode;
+      _priority = task.priority;
+      _blockDistractions = task.blockDistractions;
+      if (task.isPomodoro) {
+        _rounds = task.pomodoroRounds.clamp(Pomodoro.minRounds, Pomodoro.maxRounds);
+      } else {
+        _durationController.text = '${task.durationMinutes}';
+      }
+    }
     _loadApps();
   }
 
-  /// Carga las apps y marca por defecto las recomendadas que estén instaladas.
+  /// Carga las apps. En una tarea nueva marca las recomendadas; al editar, las que ya tenía.
   Future<void> _loadApps() async {
     final apps = await AppBlocker.instance.getLaunchableApps();
     if (!mounted) return;
+
+    final Iterable<String> initial;
+    final task = widget.initialTask;
+    if (task != null) {
+      final saved = task.blockedPackages.isNotEmpty
+          ? task.blockedPackages.toSet()
+          : BlockableApps.packagesFor(task.blockedApps).toSet();
+      initial = apps.where((a) => saved.contains(a.packageName)).map((a) => a.packageName);
+    } else if (AppBlocker.instance.isSupported) {
+      initial = apps.where((a) => a.isRecommended).map((a) => a.packageName);
+    } else {
+      initial = apps.where((a) => BlockableApps.defaultSelection.contains(a.name)).map((a) => a.packageName);
+    }
+
     setState(() {
       _availableApps = apps;
       _selectedPackages
         ..clear()
-        ..addAll(AppBlocker.instance.isSupported
-            ? apps.where((a) => a.isRecommended).map((a) => a.packageName)
-            : apps.where((a) => BlockableApps.defaultSelection.contains(a.name)).map((a) => a.packageName));
+        ..addAll(initial);
       _appsLoaded = true;
     });
+  }
+
+  Future<void> _delete() async {
+    final task = widget.initialTask;
+    if (task == null || !await confirmDeleteTask(context, task)) return;
+    if (!mounted) return;
+    await deleteTaskWithUndo(context, task);
+    if (mounted) Navigator.of(context).pop();
   }
 
   Future<void> _openAppPicker() async {
@@ -186,8 +228,12 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
       return;
     }
 
+    final original = widget.initialTask;
     final task = Task(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      // Al editar se conserva la misma tarea (id, fecha de creación y si ya estaba hecha)
+      id: original?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
+      createdAt: original?.createdAt,
+      isDone: original?.isDone ?? false,
       title: _titleController.text.trim(),
       goal: _goalController.text.trim(),
       durationMinutes: _isPomodoro ? _pomodoroFocusMinutes : int.parse(_durationController.text.trim()),
@@ -200,7 +246,12 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
     );
 
     // 3. Guardar en SQLite
-    await TaskScope.read(context)?.add(task);
+    final repo = TaskScope.read(context);
+    if (_isEditing) {
+      await repo?.update(task);
+    } else {
+      await repo?.add(task);
+    }
     if (!mounted) return;
 
     if (startNow) {
@@ -212,7 +263,7 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
         if (Navigator.of(context).canPop()) Navigator.of(context).pop();
       }
     } else {
-      showAppSnackBar(context, 'Tarea guardada en tu lista');
+      showAppSnackBar(context, _isEditing ? 'Cambios guardados' : 'Tarea guardada en tu lista');
       if (Navigator.of(context).canPop()) Navigator.of(context).pop();
     }
   }
@@ -223,7 +274,7 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
     final t = Theme.of(context).textTheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Nueva tarea')),
+      appBar: AppBar(title: Text(_isEditing ? 'Editar tarea' : 'Nueva tarea')),
       body: Form(
         key: _formKey,
         autovalidateMode: AutovalidateMode.onUserInteraction,
@@ -292,22 +343,43 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
 
             // ---------- Acciones ----------
             const SizedBox(height: AppSpacing.xxl),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                onPressed: () => _submit(startNow: true),
-                icon: const Icon(Icons.play_arrow_rounded),
-                label: const Text('Guardar e iniciar enfoque'),
+            if (_isEditing) ...[
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () => _submit(startNow: false),
+                  icon: const Icon(Icons.check_rounded),
+                  label: const Text('Guardar cambios'),
+                ),
               ),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            SizedBox(
-              width: double.infinity,
-              child: TextButton(
-                onPressed: () => _submit(startNow: false),
-                child: const Text('Solo guardar'),
+              const SizedBox(height: AppSpacing.sm),
+              SizedBox(
+                width: double.infinity,
+                child: TextButton.icon(
+                  onPressed: _delete,
+                  style: TextButton.styleFrom(foregroundColor: p.error),
+                  icon: const Icon(Icons.delete_outline),
+                  label: const Text('Eliminar tarea'),
+                ),
               ),
-            ),
+            ] else ...[
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () => _submit(startNow: true),
+                  icon: const Icon(Icons.play_arrow_rounded),
+                  label: const Text('Guardar e iniciar enfoque'),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              SizedBox(
+                width: double.infinity,
+                child: TextButton(
+                  onPressed: () => _submit(startNow: false),
+                  child: const Text('Solo guardar'),
+                ),
+              ),
+            ],
           ],
           ),
         ),

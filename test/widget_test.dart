@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:enfoque_app/models/task_model.dart';
 import 'package:enfoque_app/theme/app_theme.dart';
 import 'package:enfoque_app/widgets/task_form_screen.dart';
 
@@ -59,12 +60,12 @@ void main() {
   testWidgets('Exige al menos una app si el bloqueo está activo', (tester) async {
     await pumpForm(tester);
 
-    // Por defecto vienen marcadas las recomendadas
-    expect(find.text('3 apps elegidas'), findsOneWidget);
+    // Por defecto vienen marcadas las recomendadas (las 9 redes sociales del catálogo)
+    expect(find.text('9 apps elegidas'), findsOneWidget);
 
     // Abrir la pantalla de apps y quitar todas
-    await tester.ensureVisible(find.text('3 apps elegidas'));
-    await tester.tap(find.text('3 apps elegidas'));
+    await tester.ensureVisible(find.text('9 apps elegidas'));
+    await tester.tap(find.text('9 apps elegidas'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Ninguna'));
     await tester.pumpAndSettle();
@@ -79,5 +80,31 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Debes seleccionar al menos una app para bloquear'), findsOneWidget);
+  });
+
+  testWidgets('Editar tarea carga sus datos y muestra Guardar cambios y Eliminar', (tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 2.0;
+    addTearDown(tester.view.resetPhysicalSize);
+
+    final task = Task(
+      id: '1',
+      title: 'Estudiar Cálculo',
+      goal: 'Resolver 5 ejercicios de integrales',
+      durationMinutes: 45,
+      priority: 'Alta',
+      blockedApps: const ['Instagram'],
+    );
+    await tester.pumpWidget(MaterialApp(theme: AppTheme.light, home: TaskFormScreen(initialTask: task)));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Editar tarea'), findsOneWidget);
+    expect(find.text('Estudiar Cálculo'), findsOneWidget);
+    expect(find.text('Resolver 5 ejercicios de integrales'), findsOneWidget);
+    expect(find.text('45'), findsOneWidget); // duración
+    expect(find.text('1 app elegida'), findsOneWidget); // conserva sus apps, no las recomendadas
+    expect(find.text('Guardar cambios'), findsOneWidget);
+    expect(find.text('Eliminar tarea'), findsOneWidget);
+    expect(find.text('Guardar e iniciar enfoque'), findsNothing);
   });
 }

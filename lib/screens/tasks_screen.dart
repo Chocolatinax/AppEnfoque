@@ -6,6 +6,8 @@ import '../theme/app_spacing.dart';
 import '../widgets/common/app_card.dart';
 import '../widgets/common/enfoque_app_bar.dart';
 import '../widgets/common/priority_chip.dart';
+import '../widgets/common/task_delete.dart';
+import '../widgets/task_form_screen.dart';
 import 'session_launcher.dart';
 import 'main_shell.dart';
 
@@ -33,6 +35,19 @@ class _TasksScreenState extends State<TasksScreen> {
   String _filter = 'Todas';
 
   void _startSession(Task task) => launchFocusSession(context, task);
+
+  /// Abre el formulario con los datos de la tarea para editarla.
+  void _editTask(Task task) {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => TaskFormScreen(initialTask: task)),
+    );
+  }
+
+  /// Pide confirmación, borra la tarea y ofrece "Deshacer".
+  Future<void> _deleteTask(Task task) async {
+    if (!await confirmDeleteTask(context, task)) return;
+    if (mounted) await deleteTaskWithUndo(context, task);
+  }
 
   // ---------- Saludo y fecha en español ----------
   static const _weekdays = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
@@ -125,6 +140,8 @@ class _TasksScreenState extends State<TasksScreen> {
               done: task.isDone,
               onToggle: () => repo.toggleDone(task.id),
               onStart: () => _startSession(task),
+              onEdit: () => _editTask(task),
+              onDelete: () => _deleteTask(task),
             ),
             const SizedBox(height: AppSpacing.sm),
           ],
@@ -256,18 +273,24 @@ class _AllDoneCard extends StatelessWidget {
   }
 }
 
+enum _TaskAction { edit, delete }
+
 /// Fila de tarea: casilla para marcarla, datos básicos y botón para iniciar enfoque.
 class _TaskTile extends StatelessWidget {
   final Task task;
   final bool done;
   final VoidCallback onToggle;
   final VoidCallback onStart;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
 
   const _TaskTile({
     required this.task,
     required this.done,
     required this.onToggle,
     required this.onStart,
+    required this.onEdit,
+    required this.onDelete,
   });
 
   @override
@@ -314,9 +337,35 @@ class _TaskTile extends StatelessWidget {
               onPressed: onStart,
               tooltip: 'Iniciar enfoque: ${task.title}',
               icon: Icon(Icons.play_circle_outline, color: p.primary, size: 28),
-            )
-          else
-            const SizedBox(width: AppSpacing.minTouchTarget),
+            ),
+          // Menú ⋮ con Editar y Eliminar (visible, conocido y accesible)
+          PopupMenuButton<_TaskAction>(
+            tooltip: 'Más opciones: ${task.title}',
+            icon: Icon(Icons.more_vert, color: p.onSurfaceVariant),
+            onSelected: (action) => action == _TaskAction.edit ? onEdit() : onDelete(),
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: _TaskAction.edit,
+                child: Row(
+                  children: [
+                    Icon(Icons.edit_outlined, size: 20, color: p.onSurface),
+                    const SizedBox(width: AppSpacing.md),
+                    const Text('Editar'),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: _TaskAction.delete,
+                child: Row(
+                  children: [
+                    Icon(Icons.delete_outline, size: 20, color: p.error),
+                    const SizedBox(width: AppSpacing.md),
+                    Text('Eliminar', style: TextStyle(color: p.error)),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );

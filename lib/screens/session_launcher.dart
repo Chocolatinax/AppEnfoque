@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/task_model.dart';
 import '../services/app_blocker.dart';
+import '../services/notification_service.dart';
 import '../theme/app_palette.dart';
 import '../theme/app_spacing.dart';
 import 'active_session_screen.dart';
@@ -15,6 +16,9 @@ enum _PermissionChoice { activate, withoutBlocking }
 Future<bool> launchFocusSession(BuildContext context, Task task, {bool replace = false}) async {
   final blocker = AppBlocker.instance;
   final needsBlocking = task.blockDistractions && task.blockedApps.isNotEmpty;
+
+  // Permiso de notificaciones (el sistema solo lo pregunta la primera vez)
+  await NotificationService.instance.requestPermission();
 
   if (needsBlocking && blocker.isSupported && !await blocker.isEnabled()) {
     if (!context.mounted) return false;

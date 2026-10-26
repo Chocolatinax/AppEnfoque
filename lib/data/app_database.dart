@@ -13,9 +13,10 @@ import 'package:sqflite/sqflite.dart';
 /// - v1: tablas iniciales.
 /// - v2: modo de tiempo (libre / Pomodoro) en tareas y tiempo real de enfoque en sesiones.
 /// - v3: paquetes de Android de las apps bloqueadas (cualquier app instalada).
+/// - v4: tabla `active_session` para retomar una sesión si se cierra la app (R5).
 class AppDatabase {
   static const String fileName = 'floria.db';
-  static const int version = 3;
+  static const int version = 4;
 
   final Database db;
 
@@ -75,6 +76,19 @@ class AppDatabase {
     ''');
 
     await db.execute('CREATE INDEX idx_sessions_started_at ON sessions(started_at)');
+
+    // Sesión en curso (una sola fila): permite retomarla al reabrir la app (R5)
+    await db.execute('''
+      CREATE TABLE active_session (
+        id                INTEGER PRIMARY KEY CHECK (id = 1),
+        session_id        TEXT NOT NULL,
+        task_id           TEXT NOT NULL,
+        started_at        TEXT NOT NULL,
+        paused_seconds    INTEGER NOT NULL DEFAULT 0,
+        pause_started_at  TEXT,
+        skipped_seconds   INTEGER NOT NULL DEFAULT 0
+      )
+    ''');
   }
 
   /// Actualiza una base existente sin perder datos.
@@ -86,6 +100,19 @@ class AppDatabase {
     }
     if (oldVersion < 3) {
       await db.execute("ALTER TABLE tasks ADD COLUMN blocked_packages TEXT NOT NULL DEFAULT '[]'");
+    }
+    if (oldVersion < 4) {
+      await db.execute('''
+      CREATE TABLE active_session (
+        id                INTEGER PRIMARY KEY CHECK (id = 1),
+        session_id        TEXT NOT NULL,
+        task_id           TEXT NOT NULL,
+        started_at        TEXT NOT NULL,
+        paused_seconds    INTEGER NOT NULL DEFAULT 0,
+        pause_started_at  TEXT,
+        skipped_seconds   INTEGER NOT NULL DEFAULT 0
+      )
+      ''');
     }
   }
 

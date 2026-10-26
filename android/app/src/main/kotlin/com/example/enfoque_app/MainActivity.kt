@@ -24,6 +24,7 @@ import io.flutter.plugin.common.MethodChannel
  * - startBlocking(packages): empieza a bloquear esa lista de apps.
  * - stopBlocking: deja de bloquear (descansos, pausas o fin de la sesión).
  * - getLaunchableApps: lista las apps instaladas que se pueden abrir desde el menú.
+ * - consumePendingBlockedApp: aviso guardado si Floria estaba cerrada cuando se abrió una app bloqueada.
  *
  * Y avisa a Flutter con "blockedAppOpened" cuando el servicio detecta una app bloqueada.
  */
@@ -36,6 +37,9 @@ class MainActivity : FlutterActivity() {
     }
 
     private var channel: MethodChannel? = null
+
+    /** Aviso que llegó con Floria cerrada (Flutter todavía no estaba listo para recibirlo). */
+    private var pendingBlockedApp: Map<String, Any>? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -52,12 +56,17 @@ class MainActivity : FlutterActivity() {
                     }
                     "startBlocking" -> {
                         val packages = call.argument<List<String>>("packages") ?: emptyList()
-                        BlockerState.start(this@MainActivity, packages)
+                        val until = call.argument<Number>("until")?.toLong() ?: Long.MAX_VALUE
+                        BlockerState.start(this@MainActivity, packages, until)
                         result.success(null)
                     }
                     "stopBlocking" -> {
                         BlockerState.stop(this@MainActivity)
                         result.success(null)
+                    }
+                    "consumePendingBlockedApp" -> {
+                        result.success(pendingBlockedApp)
+                        pendingBlockedApp = null
                     }
                     "getLaunchableApps" -> {
                         // Leer íconos de muchas apps toma tiempo: se hace fuera del hilo principal
@@ -74,23 +83,22 @@ class MainActivity : FlutterActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        notifyBlockedApp(intent)
+        // Floria ya estaba abierta: avisar a Flutter de inmediato
+        blockedAppFrom(intent)?.let { channel?.invokeMethod("blockedAppOpened", it) }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Si Floria estaba cerrada, el aviso llega cuando Flutter ya está listo
-        notifyBlockedApp(intent)
+        // Floria estaba cerrada: Flutter todavía no escucha, así que el aviso se guarda
+        // y la sesión lo pide al retomarse (consumePendingBlockedApp)
+        pendingBlockedApp = blockedAppFrom(intent)
     }
 
-    private fun notifyBlockedApp(intent: Intent?) {
-        val pkg = intent?.getStringExtra(EXTRA_BLOCKED_PACKAGE) ?: return
+    private fun blockedAppFrom(intent: Intent?): Map<String, Any>? {
+        val pkg = intent?.getStringExtra(EXTRA_BLOCKED_PACKAGE) ?: return null
         val detectedAt = intent.getLongExtra(EXTRA_DETECTED_AT, System.currentTimeMillis())
         intent.removeExtra(EXTRA_BLOCKED_PACKAGE)
-        channel?.invokeMethod(
-            "blockedAppOpened",
-            mapOf("package" to pkg, "detectedAt" to detectedAt)
-        )
+        return mapOf("package" to pkg, "detectedAt" to detectedAt)
     }
 
     /**

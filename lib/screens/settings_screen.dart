@@ -5,6 +5,7 @@ import '../theme/app_palette.dart';
 import '../theme/app_spacing.dart';
 import '../utils/ui_feedback.dart';
 import '../widgets/common/app_card.dart';
+import '../services/notification_service.dart';
 import 'about_screen.dart';
 import 'blocking_permission_screen.dart';
 import 'welcome_screen.dart';
@@ -100,7 +101,17 @@ class SettingsScreen extends StatelessWidget {
               icon: Icons.notifications_outlined,
               title: 'Notificaciones',
               subtitle: 'Avisos al iniciar y terminar una sesión',
-              onTap: () => showComingSoon(context, 'La configuración de notificaciones'),
+              onTap: () async {
+                final granted = await NotificationService.instance.requestPermission();
+                if (!context.mounted) return;
+                showAppSnackBar(
+                  context,
+                  granted
+                      ? 'Las notificaciones están activadas'
+                      : 'Actívalas en los ajustes del teléfono: Apps → Floria → Notificaciones',
+                  icon: granted ? Icons.notifications_active_outlined : Icons.notifications_off_outlined,
+                );
+              },
             ),
           ]),
 

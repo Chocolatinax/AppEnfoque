@@ -13,7 +13,7 @@ class TaskRepository extends ChangeNotifier {
 
   TaskRepository(this._database);
 
-  /// Tareas ordenadas: pendientes primero, luego por prioridad y por fecha de creación.
+  /// Tareas ordenadas: pendientes primero, luego por prioridad y las más nuevas arriba.
   List<Task> get tasks => List.unmodifiable(_tasks);
 
   List<Task> get pendingTasks => _tasks.where((t) => !t.isDone).toList();
@@ -55,15 +55,31 @@ class TaskRepository extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Guarda los cambios de una tarea existente (Editar tarea).
+  Future<void> update(Task task) async {
+    await _database.db.update('tasks', task.toDbMap(), where: 'id = ?', whereArgs: [task.id]);
+    final index = _tasks.indexWhere((t) => t.id == task.id);
+    if (index >= 0) {
+      _tasks[index] = task;
+    } else {
+      _tasks.add(task);
+    }
+    _sort();
+    notifyListeners();
+  }
+
+  /// Borra una tarea. Se quita de la lista al instante (para la animación de
+  /// deslizar) y luego de SQLite. Sus sesiones se quedan en el historial.
   Future<void> delete(String id) async {
-    await _database.db.delete('tasks', where: 'id = ?', whereArgs: [id]);
     _tasks.removeWhere((t) => t.id == id);
     notifyListeners();
+    await _database.db.delete('tasks', where: 'id = ?', whereArgs: [id]);
   }
 
   /// Borra todo lo guardado en el teléfono (Ajustes → Reiniciar datos).
   Future<void> clearAll() async {
     await _database.db.transaction((txn) async {
+      await txn.delete('active_session');
       await txn.delete('sessions');
       await txn.delete('tasks');
     });
@@ -76,7 +92,8 @@ class TaskRepository extends ChangeNotifier {
       if (a.isDone != b.isDone) return a.isDone ? 1 : -1;
       final byPriority = Task.priorityRank(a.priority).compareTo(Task.priorityRank(b.priority));
       if (byPriority != 0) return byPriority;
-      return a.createdAt.compareTo(b.createdAt);
+      // Con la misma prioridad, las más nuevas arriba (como en las redes sociales)
+      return b.createdAt.compareTo(a.createdAt);
     });
   }
 }

@@ -62,6 +62,16 @@ void main() {
       expect(repo.nextTask?.id, 'alta');
     });
 
+    test('Con la misma prioridad, las más nuevas van arriba', () async {
+      final older = Task(id: 'vieja', title: 'Vieja', goal: 'Objetivo de la tarea vieja', durationMinutes: 25,
+          priority: 'Media', createdAt: DateTime(2026, 10, 20));
+      final newer = Task(id: 'nueva', title: 'Nueva', goal: 'Objetivo de la tarea nueva', durationMinutes: 25,
+          priority: 'Media', createdAt: DateTime(2026, 10, 25));
+      await repo.add(older);
+      await repo.add(newer);
+      expect(repo.tasks.map((t) => t.id), ['nueva', 'vieja']);
+    });
+
     test('Marcar como hecha se guarda y la tarea pasa al final', () async {
       await repo.add(buildTask('alta', 'Alta'));
       await repo.add(buildTask('media', 'Media'));
@@ -73,6 +83,43 @@ void main() {
       expect(reopened.tasks.last.id, 'alta');
       expect(reopened.tasks.last.isDone, isTrue);
       expect(reopened.nextTask?.id, 'media');
+    });
+
+    test('Editar guarda los cambios sobre la misma tarea', () async {
+      final original = buildTask('1', 'Baja');
+      await repo.add(original);
+
+      await repo.update(Task(
+        id: original.id,
+        title: 'Título nuevo',
+        goal: 'Objetivo nuevo con varias palabras',
+        durationMinutes: 50,
+        priority: 'Alta',
+        createdAt: original.createdAt,
+      ));
+
+      final reopened = TaskRepository(database);
+      await reopened.load();
+      expect(reopened.tasks, hasLength(1));
+      final saved = reopened.tasks.single;
+      expect(saved.id, '1');
+      expect(saved.title, 'Título nuevo');
+      expect(saved.durationMinutes, 50);
+      expect(saved.priority, 'Alta');
+      expect(saved.createdAt, original.createdAt);
+    });
+
+    test('Eliminar quita la tarea y se puede deshacer volviéndola a agregar', () async {
+      final task = buildTask('1', 'Media');
+      await repo.add(task);
+
+      await repo.delete('1');
+      expect(repo.tasks, isEmpty);
+
+      await repo.add(task); // "Deshacer"
+      final reopened = TaskRepository(database);
+      await reopened.load();
+      expect(reopened.tasks.single.id, '1');
     });
 
     test('Reiniciar datos borra todas las tareas', () async {

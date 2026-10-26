@@ -53,15 +53,28 @@ void main() {
       );
     });
 
-    test('TC-5: Objetivo vago con menos de 10 caracteres es rechazado', () {
+    test('TC-5: Objetivo con menos de 4 palabras es rechazado', () {
       expect(
         FormValidators.validateGoal('estudiar'),
-        'Sé más específico: escribe al menos 10 caracteres',
+        'Escribe al menos 4 palabras',
       );
       expect(
-        FormValidators.validateGoal('leer hoy'),
-        'Sé más específico: escribe al menos 10 caracteres',
+        FormValidators.validateGoal('estudiar mucho hoy'),
+        'Escribe al menos 4 palabras',
       );
+    });
+
+    test('TC-5b: Objetivo de 4 palabras pero muy corto es rechazado', () {
+      expect(
+        FormValidators.validateGoal('a b c d'),
+        'Escribe al menos 15 caracteres',
+      );
+    });
+
+    test('Objetivo corto pero concreto (4 palabras, 15+ caracteres) es aceptado', () {
+      expect(FormValidators.validateGoal('Leer el capítulo 3'), isNull);
+      // Espacios de más no cuentan como palabras
+      expect(FormValidators.validateGoal('  Leer   el   capítulo   3  '), isNull);
     });
 
     test('Objetivo válido es aceptado', () {

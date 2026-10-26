@@ -33,24 +33,23 @@ class BlockableApp {
 class BlockableApps {
   BlockableApps._();
 
-  /// Redes sociales y apps de entretenimiento que el atajo "Recomendadas" marca si están instaladas.
+  /// Redes sociales: son las "Recomendadas" (en Android, las que estén instaladas;
+  /// en iOS, esta misma lista). Cualquier otra app se puede elegir a mano en Android.
   static const List<BlockableApp> all = [
     BlockableApp('Instagram', ['com.instagram.android']),
     BlockableApp('TikTok', ['com.zhiliaoapp.musically', 'com.ss.android.ugc.trill']),
-    BlockableApp('YouTube', ['com.google.android.youtube']),
-    BlockableApp('X (Twitter)', ['com.twitter.android']),
     BlockableApp('Facebook', ['com.facebook.katana']),
+    BlockableApp('X (Twitter)', ['com.twitter.android']),
+    BlockableApp('YouTube', ['com.google.android.youtube']),
     BlockableApp('Snapchat', ['com.snapchat.android']),
-    BlockableApp('Netflix', ['com.netflix.mediaclient']),
-    BlockableApp('Reddit', ['com.reddit.frontpage']),
-    BlockableApp('Pinterest', ['com.pinterest']),
-    BlockableApp('Twitch', ['tv.twitch.android.app']),
-    BlockableApp('Discord', ['com.discord']),
     BlockableApp('Threads', ['com.instagram.barcelona']),
+    BlockableApp('Pinterest', ['com.pinterest']),
+    BlockableApp('Reddit', ['com.reddit.frontpage']),
   ];
 
-  /// Selección por defecto cuando no se puede leer la lista del teléfono (iOS / pruebas).
-  static const List<String> defaultSelection = ['Instagram', 'TikTok', 'YouTube'];
+  /// Selección por defecto cuando no se puede leer la lista del teléfono (iOS / pruebas):
+  /// todas las redes sociales.
+  static List<String> get defaultSelection => [for (final app in all) app.name];
 
   static final Set<String> recommendedPackages = {for (final app in all) ...app.packages};
 

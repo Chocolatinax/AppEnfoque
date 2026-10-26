@@ -6,7 +6,7 @@ import '../theme/app_spacing.dart';
 /// Elegir qué apps bloquear durante la sesión.
 ///
 /// Muestra las apps instaladas (en Android) con buscador y tres atajos:
-/// - Recomendadas: redes sociales y entretenimiento instaladas.
+/// - Recomendadas: redes sociales instaladas.
 /// - Todas: todas menos las esenciales (teléfono, mensajes, ajustes, reloj).
 /// - Ninguna.
 ///
@@ -45,6 +45,32 @@ class _AppPickerScreenState extends State<AppPickerScreen> {
 
   void _selectNone() => setState(_selected.clear);
 
+  Set<String> get _recommendedSet =>
+      widget.apps.where((a) => a.isRecommended).map((a) => a.packageName).toSet();
+  Set<String> get _allSet => widget.apps.where((a) => !a.essential).map((a) => a.packageName).toSet();
+
+  /// Qué atajo coincide con la selección actual (null = selección personalizada).
+  String? get _activePreset {
+    bool same(Set<String> other) => _selected.length == other.length && _selected.containsAll(other);
+    if (_selected.isEmpty) return 'Ninguna';
+    if (same(_recommendedSet)) return 'Recomendadas';
+    if (same(_allSet)) return 'Todas';
+    return null;
+  }
+
+  /// Atajo que se ve sombreado cuando la selección coincide con él.
+  Widget _presetChip(String label, IconData icon, VoidCallback onTap, AppPalette p) {
+    final active = _activePreset == label;
+    return ChoiceChip(
+      selected: active,
+      showCheckmark: false,
+      avatar: Icon(icon, size: 18, color: active ? p.onPrimary : p.onSurfaceVariant),
+      label: Text(label),
+      labelStyle: TextStyle(fontWeight: FontWeight.w600, color: active ? p.onPrimary : p.onSurface),
+      onSelected: (_) => onTap(),
+    );
+  }
+
   void _toggle(InstalledApp app) => setState(() {
         if (!_selected.remove(app.packageName)) _selected.add(app.packageName);
       });
@@ -76,21 +102,9 @@ class _AppPickerScreenState extends State<AppPickerScreen> {
                   spacing: AppSpacing.sm,
                   runSpacing: AppSpacing.sm,
                   children: [
-                    ActionChip(
-                      avatar: const Icon(Icons.auto_awesome_outlined, size: 18),
-                      label: const Text('Recomendadas'),
-                      onPressed: _selectRecommended,
-                    ),
-                    ActionChip(
-                      avatar: const Icon(Icons.done_all, size: 18),
-                      label: const Text('Todas'),
-                      onPressed: _selectAll,
-                    ),
-                    ActionChip(
-                      avatar: const Icon(Icons.remove_done, size: 18),
-                      label: const Text('Ninguna'),
-                      onPressed: _selectNone,
-                    ),
+                    _presetChip('Recomendadas', Icons.auto_awesome_outlined, _selectRecommended, p),
+                    _presetChip('Todas', Icons.done_all, _selectAll, p),
+                    _presetChip('Ninguna', Icons.remove_done, _selectNone, p),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.sm),

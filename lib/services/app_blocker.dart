@@ -72,8 +72,25 @@ class AppBlocker {
   /// Abre los ajustes de Accesibilidad de Android.
   Future<void> openSettings() => _call('openAccessibilitySettings');
 
-  /// Empieza a bloquear los [packages] indicados.
-  Future<void> start(List<String> packages) => _call('startBlocking', {'packages': packages});
+  /// Empieza a bloquear los [packages] hasta [until] (fin del bloque de enfoque).
+  /// Si Floria se cierra y no se vuelve a abrir, el bloqueo se libera solo a esa hora.
+  Future<void> start(List<String> packages, {required DateTime until}) =>
+      _call('startBlocking', {'packages': packages, 'until': until.millisecondsSinceEpoch});
+
+  /// Aviso de app bloqueada que llegó mientras Floria estaba cerrada (o null).
+  Future<BlockedAppEvent?> consumePendingBlockedApp() async {
+    if (!isSupported) return null;
+    try {
+      final raw = await _channel.invokeMapMethod<String, Object?>('consumePendingBlockedApp');
+      if (raw == null) return null;
+      return BlockedAppEvent(
+        raw['package'] as String,
+        DateTime.fromMillisecondsSinceEpoch(raw['detectedAt'] as int),
+      );
+    } catch (_) {
+      return null;
+    }
+  }
 
   /// Deja de bloquear (descanso, pausa de emergencia o fin de la sesión).
   Future<void> stop() => _call('stopBlocking');

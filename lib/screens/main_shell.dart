@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../data/task_repository.dart';
+import '../models/session_clock.dart';
+import 'active_session_screen.dart';
 import '../widgets/common/app_bottom_nav.dart';
 import '../widgets/task_form_screen.dart';
 import 'focus_screen.dart';
@@ -14,7 +17,10 @@ import 'tasks_screen.dart';
 class MainShell extends StatefulWidget {
   final int initialIndex;
 
-  const MainShell({super.key, this.initialIndex = 0});
+  /// Sesión en curso que se retoma al abrir la app (R5).
+  final ActiveSessionRecord? resumeSession;
+
+  const MainShell({super.key, this.initialIndex = 0, this.resumeSession});
 
   /// Índices de las pestañas, para no usar "números mágicos".
   static const int tabTareas = 0;
@@ -30,6 +36,23 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> {
   late int _currentIndex = widget.initialIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    final resume = widget.resumeSession;
+    if (resume != null) {
+      // Abrir la sesión encima de Tareas, con el tiempo real transcurrido
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final task = TaskScope.read(context)?.tasks.where((t) => t.id == resume.taskId).firstOrNull;
+        if (task == null) return;
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => ActiveSessionScreen(task: task, restored: resume)),
+        );
+      });
+    }
+  }
 
   void _goToTab(int index) {
     if (index == MainShell.tabNueva) {

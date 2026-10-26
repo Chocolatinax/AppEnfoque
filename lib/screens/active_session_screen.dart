@@ -4,47 +4,53 @@ import '../data/blockable_apps.dart';
 import '../data/session_repository.dart';
 import '../data/task_repository.dart';
 import '../models/focus_session.dart';
+import '../models/session_clock.dart';
 import '../models/task_model.dart';
 import '../services/app_blocker.dart';
+import '../services/notification_service.dart';
 import '../theme/app_palette.dart';
 import '../theme/app_spacing.dart';
 import '../utils/ui_feedback.dart';
 import '../widgets/common/app_card.dart';
 import 'blocked_app_reminder_screen.dart';
 
-/// Una fase de la sesión: enfoque o descanso.
-class _Phase {
-  final bool isFocus;
-  final int minutes;
-  final int round;
-  const _Phase({required this.isFocus, required this.minutes, required this.round});
-}
-
 /// Sesión de enfoque en curso.
 ///
 /// - Tiempo libre: un solo bloque de enfoque.
-/// - Pomodoro: rondas de 25 min con descansos de 5 min (25 min cada 3 rondas).
+/// - Pomodoro: rondas de 25 min con 5 min de descanso (25 min después de la 4.ª ronda).
+///
+/// El tiempo se calcula con [SessionClock] a partir de horas reales y la sesión se
+/// guarda en SQLite: si la app se cierra, al reabrirla se retoma con el tiempo real (R5).
 ///
 /// No hay botón de volver: la única salida es terminar o abandonar.
 /// Al terminar pregunta si se cumplió el objetivo y guarda la sesión en el historial (R2).
 class ActiveSessionScreen extends StatefulWidget {
   final Task task;
 
-  const ActiveSessionScreen({super.key, required this.task});
+  /// Sesión guardada que se retoma al reabrir la app (null = sesión nueva).
+  final ActiveSessionRecord? restored;
+
+  const ActiveSessionScreen({super.key, required this.task, this.restored});
 
   @override
   State<ActiveSessionScreen> createState() => _ActiveSessionScreenState();
 }
 
-class _ActiveSessionScreenState extends State<ActiveSessionScreen> with SingleTickerProviderStateMixin {
-  static const int _emergencyPauseSeconds = 2 * 60;
+class _ActiveSessionScreenState extends State<ActiveSessionScreen>
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
+  late final String _sessionId = widget.restored?.sessionId ?? DateTime.now().millisecondsSinceEpoch.toString();
 
-  late final List<_Phase> _phases = _buildPhases();
-  final DateTime _startedAt = DateTime.now();
-  int _phaseIndex = 0;
-  late int _secondsLeft = _phases.first.minutes * 60;
-  int _pauseSecondsLeft = 0;
-  int _focusSeconds = 0;
+  late final SessionClock _clock = SessionClock(
+    phases: SessionClock.phasesFor(widget.task),
+    startedAt: widget.restored?.startedAt ?? DateTime.now(),
+    pausedSeconds: widget.restored?.pausedSeconds ?? 0,
+    pauseStartedAt: widget.restored?.pauseStartedAt,
+    skippedSeconds: widget.restored?.skippedSeconds ?? 0,
+  );
+
+  DateTime _now = DateTime.now();
+  late SessionPosition _position = _clock.position(_now);
+  late int _lastPhaseIndex = _position.index;
   bool _ended = false;
   Timer? _timer;
 
@@ -73,31 +79,40 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen> with SingleTi
     duration: const Duration(seconds: 4),
   );
 
-  _Phase get _phase => _phases[_phaseIndex];
-  bool get _isLastPhase => _phaseIndex == _phases.length - 1;
-  bool get _isPaused => _pauseSecondsLeft > 0;
+  // Valores que usa la interfaz, calculados con el reloj
+  List<SessionPhase> get _phases => _clock.phases;
+  SessionPhase get _phase => _phases[_position.index];
+  int get _secondsLeft => _position.secondsLeft;
+  bool get _isLastPhase => _position.index == _phases.length - 1;
+  bool get _isPaused => _clock.isPaused(_now);
+  int get _pauseSecondsLeft => _clock.pauseSecondsLeft(_now);
   int get _focusRounds => _phases.where((ph) => ph.isFocus).length;
-
-  List<_Phase> _buildPhases() {
-    final task = widget.task;
-    if (!task.isPomodoro) {
-      return [_Phase(isFocus: true, minutes: task.durationMinutes, round: 1)];
-    }
-    final phases = <_Phase>[];
-    for (var r = 1; r <= task.pomodoroRounds; r++) {
-      phases.add(_Phase(isFocus: true, minutes: Pomodoro.focusMinutes, round: r));
-      // Toda ronda termina con su descanso (también la última)
-      phases.add(_Phase(isFocus: false, minutes: Pomodoro.breakAfterRound(r), round: r));
-    }
-    return phases;
-  }
 
   @override
   void initState() {
     super.initState();
     _timer = Timer.periodic(const Duration(seconds: 1), (_) => _tick());
     _blockedSub = AppBlocker.instance.blockedAppOpened.listen(_onBlockedApp);
-    _syncBlocking();
+    WidgetsBinding.instance.addObserver(this);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      _persist(); // guardar la sesión desde el primer segundo
+      // Notificación de inicio: "Sesión de enfoque en curso · termina a las HH:MM"
+      NotificationService.instance.showSessionInProgress(
+        widget.task,
+        _clock.endsAt(DateTime.now()),
+        update: widget.restored != null,
+      );
+      NotificationService.instance.cancelScheduled(); // estamos dentro de la app
+      if (widget.restored != null) {
+        showAppSnackBar(context, 'Retomamos tu sesión donde ibas', icon: Icons.history_rounded);
+      }
+      _tick(); // si se terminó mientras la app estaba cerrada, cierra la sesión
+      // Si Floria se abrió porque intentaste abrir una app bloqueada, mostrar el recordatorio
+      final pending = await AppBlocker.instance.consumePendingBlockedApp();
+      if (pending != null) _onBlockedApp(pending);
+    });
   }
 
   @override
@@ -113,6 +128,7 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen> with SingleTi
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _timer?.cancel();
     _blockedSub?.cancel();
     if (_blockingActive) AppBlocker.instance.stop();
@@ -121,55 +137,82 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen> with SingleTi
     super.dispose();
   }
 
+  /// Al salir de la app se programan los avisos; al volver se cancelan
+  /// (adentro ya se ven los avisos de la pantalla) y se actualiza el tiempo.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (_ended) return;
+    switch (state) {
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.hidden:
+      case AppLifecycleState.paused:
+        NotificationService.instance.scheduleSessionEvents(_clock, widget.task);
+      case AppLifecycleState.resumed:
+        NotificationService.instance.cancelScheduled();
+        _tick();
+      case AppLifecycleState.detached:
+        break;
+    }
+  }
+
   // ---------- Lógica del temporizador ----------
+
+  /// Guarda el estado del reloj en SQLite (para retomar la sesión si la app se cierra).
+  void _persist() {
+    if (_ended) return;
+    SessionScope.read(context)?.saveActive(
+      ActiveSessionRecord.fromClock(_sessionId, widget.task.id, _clock),
+    );
+    // La hora de fin puede cambiar (pausa o descanso saltado)
+    NotificationService.instance.showSessionInProgress(widget.task, _clock.endsAt(DateTime.now()), update: true);
+  }
 
   void _tick() {
     if (!mounted || _ended) return;
-    setState(() {
-      if (_isPaused) {
-        _pauseSecondsLeft--;
-        if (_pauseSecondsLeft == 0) showAppSnackBar(context, 'Pausa terminada. De vuelta al enfoque.');
-        return;
-      }
-      if (_secondsLeft > 0) {
-        _secondsLeft--;
-        if (_phase.isFocus) _focusSeconds++;
-      }
-      if (_secondsLeft == 0) _nextPhase();
-    });
+    _now = DateTime.now();
+
+    if (_clock.settlePause(_now)) {
+      _persist();
+      showAppSnackBar(context, 'Pausa terminada. De vuelta al enfoque.');
+    }
+
+    final position = _clock.position(_now);
+    setState(() => _position = position);
+
+    if (position.finished) {
+      _ended = true;
+      _timer?.cancel();
+      WidgetsBinding.instance.addPostFrameCallback((_) => _finish());
+    } else if (position.index != _lastPhaseIndex) {
+      _lastPhaseIndex = position.index;
+      showAppSnackBar(
+        context,
+        _phase.isFocus
+            ? 'Ronda ${_phase.round}: de vuelta al enfoque'
+            : '¡Bien! Toma un descanso de ${_phase.minutes} min',
+        icon: _phase.isFocus ? Icons.spa_outlined : Icons.local_cafe_outlined,
+      );
+    }
+
     _secondsLeftNotifier.value = _secondsLeft;
     _syncBlocking();
   }
 
-  void _nextPhase() {
-    if (_phaseIndex == _phases.length - 1) {
-      _ended = true;
-      _timer?.cancel();
-      WidgetsBinding.instance.addPostFrameCallback((_) => _finish());
-      return;
-    }
-    _phaseIndex++;
-    _secondsLeft = _phase.minutes * 60;
-    showAppSnackBar(
-      context,
-      _phase.isFocus
-          ? 'Ronda ${_phase.round}: de vuelta al enfoque'
-          : '¡Bien! Toma un descanso de ${_phase.minutes} min',
-      icon: _phase.isFocus ? Icons.spa_outlined : Icons.local_cafe_outlined,
-    );
-  }
-
   void _toggleEmergencyPause() {
-    setState(() => _pauseSecondsLeft = _isPaused ? 0 : _emergencyPauseSeconds);
-    _syncBlocking();
+    final now = DateTime.now();
+    if (_clock.isPaused(now)) {
+      _clock.endPause(now);
+    } else {
+      _clock.startPause(now);
+    }
+    _persist();
+    _tick();
   }
 
   void _skipBreak() {
-    setState(() {
-      _secondsLeft = 0;
-      _nextPhase();
-    });
-    _syncBlocking();
+    _clock.skipCurrentPhase(DateTime.now());
+    _persist();
+    _tick();
   }
 
   // ---------- Bloqueo de apps ----------
@@ -182,7 +225,8 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen> with SingleTi
     if (should == _blockingActive) return;
     _blockingActive = should;
     if (should) {
-      AppBlocker.instance.start(_blockedPackages);
+      // Vence al terminar este bloque de enfoque (por si la app se cierra)
+      AppBlocker.instance.start(_blockedPackages, until: DateTime.now().add(Duration(seconds: _secondsLeft)));
     } else {
       AppBlocker.instance.stop();
       // Si empieza un descanso o termina la sesión con el recordatorio abierto, se cierra solo
@@ -224,14 +268,17 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen> with SingleTi
   // ---------- Cierre de sesión ----------
 
   Future<void> _record(String status, {String? goalResult}) async {
-    await SessionScope.read(context)?.record(
+    final sessions = SessionScope.read(context);
+    await NotificationService.instance.cancelAll();
+    await sessions?.clearActive(); // ya no está en curso
+    await sessions?.record(
       FocusSession(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        id: _sessionId,
         taskId: widget.task.id,
         taskTitle: widget.task.title,
         plannedMinutes: widget.task.durationMinutes,
-        focusSeconds: _focusSeconds,
-        startedAt: _startedAt,
+        focusSeconds: _clock.focusSeconds(DateTime.now()),
+        startedAt: _clock.startedAt,
         endedAt: DateTime.now(),
         status: status,
         goalResult: goalResult,
@@ -298,6 +345,14 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen> with SingleTi
     final m = (seconds ~/ 60).toString().padLeft(2, '0');
     final s = (seconds % 60).toString().padLeft(2, '0');
     return '$m:$s';
+  }
+
+  /// Resumen corto: "Instagram y TikTok están bloqueadas" o "Instagram, TikTok y 7 más están bloqueadas".
+  String get _blockedSummary {
+    final names = widget.task.blockedApps;
+    if (names.length == 1) return '${names.first} está bloqueada';
+    if (names.length == 2) return '${names[0]} y ${names[1]} están bloqueadas';
+    return '${names[0]}, ${names[1]} y ${names.length - 2} más están bloqueadas';
   }
 
   String get _phaseLabel {
@@ -406,7 +461,7 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen> with SingleTi
                             const SizedBox(width: AppSpacing.xs),
                             Expanded(
                               child: Text(
-                                'Bloqueadas: ${widget.task.blockedApps.join(', ')}',
+                                _blockedSummary,
                                 style: t.bodySmall!.copyWith(color: p.tertiary),
                               ),
                             ),

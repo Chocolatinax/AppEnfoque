@@ -128,6 +128,7 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
+        errorMaxLines: 2,
         fillColor: p.surfaceContainerLowest,
         hintStyle: TextStyle(color: p.onSurfaceVariant),
         border: OutlineInputBorder(

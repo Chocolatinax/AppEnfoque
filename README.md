@@ -33,11 +33,11 @@ Floria está pensada para estudiantes de bachillerato y universidad (aprox. 15 a
 | **Tareas** | Inicio: saludo, Pomodoro rápido, estado del bloqueo y lista de tareas con filtros por prioridad. |
 | **Nueva** | Formulario para crear una tarea con validaciones (título, objetivo, duración, prioridad, etiquetas y apps a bloquear). |
 | **Sesión Activa** | Se abre con "Guardar e Iniciar Enfoque": temporizador real, compromiso de la tarea, pausa de emergencia de 2 minutos y opción de abandonar. |
-| **Enfoque** | Pestaña en construcción. |
+| **Enfoque** | Resumen del día y tareas pendientes para iniciar una sesión. |
 | **Historial** | Resumen semanal: métricas, actividad diaria, tiempo por área y sesiones recientes. |
 | **Perfil de invitado** | Almacenamiento local, ajustes y reinicio de datos. |
 
-> **Estado:** las pantallas son navegables y sus botones responden, pero por ahora usan datos de ejemplo. La persistencia local (SQLite), el bloqueo nativo de apps (Kotlin) y las notificaciones locales se integrarán en las siguientes etapas.
+> **Estado:** tareas e historial guardados en SQLite, bloqueo de apps en Android (Kotlin), sesiones que se retoman si se cierra la app y notificaciones locales. Pendiente: editar y borrar tareas, y exportar datos.
 
 ---
 
@@ -180,13 +180,13 @@ docs/                             # Documentación de entregas
 ## Stack tecnológico
 
 - **Flutter (Dart):** interfaz y lógica de la app.
-- **Kotlin (Platform Channels):** bloqueo de apps con APIs nativas de Android *(próximamente)*.
-- **SQLite:** persistencia local de tareas y sesiones *(próximamente)*.
-- **flutter_local_notifications:** avisos de inicio y fin de sesión *(próximamente)*.
+- **Kotlin (Platform Channels):** bloqueo de apps con un Servicio de Accesibilidad de Android.
+- **SQLite (`sqflite`):** persistencia local de tareas, historial y sesión en curso.
+- **flutter_local_notifications:** avisos de inicio, descansos y fin de sesión.
 - **Sin backend:** la app es de uso individual, sin registro y sin sincronización en la nube.
 
 ---
 
 ## Documentación
 
-- [Especificación: refactorización del formulario con `Form`](docs/especificacion-formulario.md)
+- [Plan de rediseño: paleta Salvia, minimalismo y accesibilidad](docs/plan-rediseno-ux.md)

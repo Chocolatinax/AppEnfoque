@@ -22,15 +22,24 @@ class FormValidators {
 
   /// Validador para el Campo 2: Declaración del objetivo ("¿Qué quieres lograr exactamente?")
   /// - Rechaza valores nulos o vacíos.
-  /// - Rechaza metas ambiguas o monosilábicas (mínimo 10 caracteres).
+  /// - Rechaza metas ambiguas: mínimo 4 palabras y 15 caracteres.
   /// - Rechaza metas excesivamente largas (>300 caracteres).
+  static const int minGoalWords = 4;
+  static const int minGoalChars = 15;
+
   static String? validateGoal(String? value) {
     if (value == null || value.trim().isEmpty) {
       return 'Declara qué quieres lograr en esta sesión';
     }
     final trimmed = value.trim();
-    if (trimmed.length < 10) {
-      return 'Sé más específico: escribe al menos 10 caracteres';
+    // Mínimo 4 palabras para que el objetivo sea concreto ("Leer el capítulo 3")...
+    final words = trimmed.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).length;
+    if (words < minGoalWords) {
+      return 'Escribe al menos $minGoalWords palabras';
+    }
+    // ...y mínimo 15 caracteres, para que no pasen cosas como "a a a a"
+    if (trimmed.length < minGoalChars) {
+      return 'Escribe al menos $minGoalChars caracteres';
     }
     if (trimmed.length > 300) {
       return 'El objetivo no puede superar los 300 caracteres';

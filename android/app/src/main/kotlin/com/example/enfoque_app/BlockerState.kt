@@ -12,11 +12,18 @@ object BlockerState {
     private const val PREFS = "floria_blocker"
     private const val KEY_ACTIVE = "active"
     private const val KEY_PACKAGES = "packages"
+    private const val KEY_UNTIL = "until"
 
-    fun start(context: Context, packages: List<String>) {
+    /**
+     * Empieza a bloquear [packages] hasta [untilMillis] (fin del bloque de enfoque).
+     * La hora de vencimiento evita que el bloqueo quede activo para siempre si
+     * Floria se cierra y no se vuelve a abrir.
+     */
+    fun start(context: Context, packages: List<String>, untilMillis: Long) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
             .putBoolean(KEY_ACTIVE, packages.isNotEmpty())
             .putStringSet(KEY_PACKAGES, packages.toSet())
+            .putLong(KEY_UNTIL, untilMillis)
             .apply()
     }
 
@@ -26,8 +33,11 @@ object BlockerState {
             .apply()
     }
 
-    fun isActive(context: Context): Boolean =
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(KEY_ACTIVE, false)
+    fun isActive(context: Context): Boolean {
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        return prefs.getBoolean(KEY_ACTIVE, false) &&
+            System.currentTimeMillis() < prefs.getLong(KEY_UNTIL, Long.MAX_VALUE)
+    }
 
     fun blockedPackages(context: Context): Set<String> =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)

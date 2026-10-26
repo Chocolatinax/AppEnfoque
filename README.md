@@ -24,7 +24,6 @@ App móvil hecha en **Flutter** que ayuda a los estudiantes a sostener sesiones 
 10. [Arquitectura](#arquitectura)
 11. [Stack tecnológico](#stack-tecnológico)
 12. [Solución de problemas](#solución-de-problemas)
-13. [Documentación](#documentación)
 
 ---
 
@@ -286,7 +285,6 @@ AppEnfoque/
 │       └── Info.plist            # Nombre de la app y ajustes de iOS
 ├── assets/branding/              # Logo, isotipo e ícono de la app
 ├── test/                         # Pruebas unitarias y de widgets
-├── docs/                         # Documentación del proyecto
 ├── pubspec.yaml                  # Dependencias y recursos
 └── analysis_options.yaml         # Reglas del analizador de código
 ```
@@ -341,9 +339,3 @@ Servicios (services/) ── MethodChannel ──► Kotlin (bloqueo de apps)
 | iPhone: error de *Signing* | En Xcode elige tu Team y cambia el Bundle Identifier por uno propio. |
 | El bloqueo no funciona en Android | Revisa que el servicio "Floria: bloqueo de distracciones" esté activado en Accesibilidad y que la app esté marcada en la tarea. |
 | No llegan notificaciones | Revisa que estén permitidas en los ajustes del teléfono para Floria. |
-
----
-
-## Documentación
-
-- [Plan de rediseño: paleta Salvia, minimalismo y accesibilidad](docs/plan-rediseno-ux.md)

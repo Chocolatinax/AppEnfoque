@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 /// Paleta "Salvia Floria" — versión CLARA, como constantes.
 ///
-/// Todos los pares de texto/fondo pasan WCAG AA (4.5:1). Ver docs/plan-rediseno-ux.md.
+/// Todos los pares de texto/fondo pasan WCAG AA (4.5:1).
 ///
 /// IMPORTANTE: estas constantes NO cambian con el modo oscuro. En código nuevo usa
 /// `context.palette.<color>` (ver app_palette.dart), que sí se adapta al tema.

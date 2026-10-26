@@ -13,14 +13,16 @@ void main() {
   late SessionRepository repo;
 
   setUp(() async {
-    database = await AppDatabase.open(factory: databaseFactoryFfi, path: inMemoryDatabasePath);
+    database = await AppDatabase.open(
+        factory: databaseFactoryFfi, path: inMemoryDatabasePath);
     repo = SessionRepository(database);
     await repo.load();
   });
 
   tearDown(() => database.close());
 
-  FocusSession buildSession(String id, DateTime start, {String status = SessionStatus.completed, int minutes = 25}) =>
+  FocusSession buildSession(String id, DateTime start,
+          {String status = SessionStatus.completed, int minutes = 25}) =>
       FocusSession(
         id: id,
         taskId: null,
@@ -34,10 +36,12 @@ void main() {
       );
 
   group('Historial de sesiones (SQLite)', () {
-    test('Registra fecha, duración, tarea y estado de la sesión (R2)', () async {
+    test('Registra fecha, duración, tarea y estado de la sesión (R2)',
+        () async {
       final start = DateTime(2026, 10, 20, 10, 30);
       await repo.record(buildSession('1', start, minutes: 40));
-      await repo.record(buildSession('2', start.add(const Duration(hours: 2)), status: SessionStatus.abandoned, minutes: 10));
+      await repo.record(buildSession('2', start.add(const Duration(hours: 2)),
+          status: SessionStatus.abandoned, minutes: 10));
 
       final reopened = SessionRepository(database);
       await reopened.load();
@@ -49,32 +53,39 @@ void main() {
       expect(completed.taskTitle, 'Estudiar Cálculo');
       expect(completed.isCompleted, isTrue);
       expect(completed.goalResult, GoalResult.yes);
-      expect(reopened.sessions.firstWhere((s) => s.id == '2').isCompleted, isFalse);
+      expect(reopened.sessions.firstWhere((s) => s.id == '2').isCompleted,
+          isFalse);
     });
 
     test('Filtra las sesiones de una semana', () async {
-      await repo.record(buildSession('a', DateTime(2026, 10, 19, 9)));  // lunes
-      await repo.record(buildSession('b', DateTime(2026, 10, 25, 22))); // domingo
-      await repo.record(buildSession('c', DateTime(2026, 10, 26, 8)));  // lunes siguiente
+      await repo.record(buildSession('a', DateTime(2026, 10, 19, 9))); // lunes
+      await repo
+          .record(buildSession('b', DateTime(2026, 10, 25, 22))); // domingo
+      await repo.record(
+          buildSession('c', DateTime(2026, 10, 26, 8))); // lunes siguiente
 
       final week = repo.between(DateTime(2026, 10, 19), DateTime(2026, 10, 26));
       expect(week.map((s) => s.id).toSet(), {'a', 'b'});
     });
 
-    test('Calcula la racha de días seguidos con sesiones completadas', () async {
+    test('Calcula la racha de días seguidos con sesiones completadas',
+        () async {
       final today = DateTime(2026, 10, 22, 18);
       await repo.record(buildSession('1', DateTime(2026, 10, 22, 9)));
       await repo.record(buildSession('2', DateTime(2026, 10, 21, 9)));
       await repo.record(buildSession('3', DateTime(2026, 10, 20, 9)));
-      await repo.record(buildSession('4', DateTime(2026, 10, 18, 9))); // día cortado
-      await repo.record(buildSession('5', DateTime(2026, 10, 19, 9), status: SessionStatus.abandoned));
+      await repo
+          .record(buildSession('4', DateTime(2026, 10, 18, 9))); // día cortado
+      await repo.record(buildSession('5', DateTime(2026, 10, 19, 9),
+          status: SessionStatus.abandoned));
 
       expect(repo.currentStreak(today: today), 3);
     });
   });
 
   group('Reglas del Pomodoro', () {
-    test('Descanso corto de 5 min y largo de 25 min después de la 4.ª ronda', () {
+    test('Descanso corto de 5 min y largo de 25 min después de la 4.ª ronda',
+        () {
       expect(Pomodoro.breakAfterRound(1), 5);
       expect(Pomodoro.breakAfterRound(2), 5);
       expect(Pomodoro.breakAfterRound(3), 5);

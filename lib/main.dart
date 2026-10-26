@@ -26,7 +26,8 @@ Future<void> main() async {
 
   // ¿Quedó una sesión en curso cuando se cerró la app? (R5)
   ActiveSessionRecord? activeSession = await sessionRepository.loadActive();
-  if (activeSession != null && taskRepository.tasks.every((t) => t.id != activeSession!.taskId)) {
+  if (activeSession != null &&
+      taskRepository.tasks.every((t) => t.id != activeSession!.taskId)) {
     await sessionRepository.clearActive(); // su tarea ya no existe
     activeSession = null;
   }
@@ -60,22 +61,22 @@ class FloriaApp extends StatelessWidget {
     return SessionScope(
       repository: sessionRepository,
       child: TaskScope(
-      repository: taskRepository,
-      child: MaterialApp(
-        title: 'Floria',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.light,
-        darkTheme: AppTheme.dark,
-        themeMode: kDarkModeReady ? ThemeMode.system : ThemeMode.light,
-        // Si ya hay tareas guardadas, se salta la bienvenida y entra directo.
-        // Flujo: Bienvenida -> Tareas / Enfoque / Historial (+ Nueva tarea) -> Ajustes
-        // Si había una sesión en curso, se retoma al abrir la app (R5).
-        home: activeSession != null
-            ? MainShell(resumeSession: activeSession)
-            : taskRepository.tasks.isEmpty
-                ? const WelcomeScreen()
-                : const MainShell(),
-      ),
+        repository: taskRepository,
+        child: MaterialApp(
+          title: 'Floria',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.light,
+          darkTheme: AppTheme.dark,
+          themeMode: kDarkModeReady ? ThemeMode.system : ThemeMode.light,
+          // Si ya hay tareas guardadas, se salta la bienvenida y entra directo.
+          // Flujo: Bienvenida -> Tareas / Enfoque / Historial (+ Nueva tarea) -> Ajustes
+          // Si había una sesión en curso, se retoma al abrir la app (R5).
+          home: activeSession != null
+              ? MainShell(resumeSession: activeSession)
+              : taskRepository.tasks.isEmpty
+                  ? const WelcomeScreen()
+                  : const MainShell(),
+        ),
       ),
     );
   }

@@ -25,9 +25,30 @@ class _HistoryScreenState extends State<HistoryScreen> {
   String _filter = 'Todas';
 
   static const _dayLetters = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
-  static const _dayNames = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+  static const _dayNames = [
+    'Lunes',
+    'Martes',
+    'Miércoles',
+    'Jueves',
+    'Viernes',
+    'Sábado',
+    'Domingo'
+  ];
   static const _dayShort = ['lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom'];
-  static const _monthsShort = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+  static const _monthsShort = [
+    'ene',
+    'feb',
+    'mar',
+    'abr',
+    'may',
+    'jun',
+    'jul',
+    'ago',
+    'sep',
+    'oct',
+    'nov',
+    'dic'
+  ];
 
   DateTime get _weekStart {
     final today = DateUtils.dateOnly(DateTime.now());
@@ -70,9 +91,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final completed = week.where((s) => s.isCompleted).length;
 
     return Scaffold(
-      appBar: EnfoqueAppBar(title: 'Historial', onSettingsTap: widget.onOpenSettings),
+      appBar: EnfoqueAppBar(
+          title: 'Historial', onSettingsTap: widget.onOpenSettings),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(AppSpacing.screen, AppSpacing.sm, AppSpacing.screen, AppSpacing.xxl),
+        padding: const EdgeInsets.fromLTRB(AppSpacing.screen, AppSpacing.sm,
+            AppSpacing.screen, AppSpacing.xxl),
         children: [
           // Selector de semana
           Row(
@@ -85,7 +108,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 }),
                 icon: const Icon(Icons.chevron_left_rounded),
               ),
-              Expanded(child: Text(_weekLabel, textAlign: TextAlign.center, style: t.titleMedium)),
+              Expanded(
+                  child: Text(_weekLabel,
+                      textAlign: TextAlign.center, style: t.titleMedium)),
               IconButton(
                 tooltip: 'Semana siguiente',
                 onPressed: _weekOffset < 0
@@ -106,11 +131,18 @@ class _HistoryScreenState extends State<HistoryScreen> {
             // Métricas principales (3)
             Row(
               children: [
-                Expanded(child: _Metric(label: 'Enfoque', value: _formatMinutes(totalMinutes))),
+                Expanded(
+                    child: _Metric(
+                        label: 'Enfoque', value: _formatMinutes(totalMinutes))),
                 const SizedBox(width: AppSpacing.sm),
-                Expanded(child: _Metric(label: 'Completadas', value: '$completed de ${week.length}')),
+                Expanded(
+                    child: _Metric(
+                        label: 'Completadas',
+                        value: '$completed de ${week.length}')),
                 const SizedBox(width: AppSpacing.sm),
-                Expanded(child: _Metric(label: 'Racha', value: '${repo.currentStreak()} días')),
+                Expanded(
+                    child: _Metric(
+                        label: 'Racha', value: '${repo.currentStreak()} días')),
               ],
             ),
             if (_weekOffset == 0 && prevWeek.isNotEmpty) ...[
@@ -136,7 +168,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
         children: [
           Icon(Icons.insights_outlined, size: 40, color: p.primary),
           const SizedBox(height: AppSpacing.md),
-          Text('Aún no hay sesiones', style: t.titleLarge, textAlign: TextAlign.center),
+          Text('Aún no hay sesiones',
+              style: t.titleLarge, textAlign: TextAlign.center),
           const SizedBox(height: AppSpacing.xs),
           Text(
             _weekOffset == 0
@@ -159,14 +192,20 @@ class _HistoryScreenState extends State<HistoryScreen> {
             : '${_formatMinutes(-diff)} menos de enfoque que la semana pasada.';
     return Row(
       children: [
-        Icon(diff >= 0 ? Icons.trending_up_rounded : Icons.trending_down_rounded, size: 18, color: p.secondary),
+        Icon(
+            diff >= 0 ? Icons.trending_up_rounded : Icons.trending_down_rounded,
+            size: 18,
+            color: p.secondary),
         const SizedBox(width: AppSpacing.sm),
-        Expanded(child: Text(text, style: t.bodyMedium!.copyWith(color: p.onSurfaceVariant))),
+        Expanded(
+            child: Text(text,
+                style: t.bodyMedium!.copyWith(color: p.onSurfaceVariant))),
       ],
     );
   }
 
-  Widget _buildDailyChart(List<FocusSession> week, DateTime start, AppPalette p, TextTheme t) {
+  Widget _buildDailyChart(
+      List<FocusSession> week, DateTime start, AppPalette p, TextTheme t) {
     // Minutos de enfoque por día (lunes a domingo)
     final perDay = List<int>.filled(7, 0);
     for (final s in week) {
@@ -180,13 +219,15 @@ class _HistoryScreenState extends State<HistoryScreen> {
     const chartHeight = 120.0;
 
     final summary = [
-      for (var i = 0; i < 7; i++) '${_dayNames[i]}: ${_formatMinutes(perDay[i])}',
+      for (var i = 0; i < 7; i++)
+        '${_dayNames[i]}: ${_formatMinutes(perDay[i])}',
     ].join('. ');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Semantics(header: true, child: Text('Enfoque por día', style: t.titleMedium)),
+        Semantics(
+            header: true, child: Text('Enfoque por día', style: t.titleMedium)),
         const SizedBox(height: AppSpacing.md),
         AppCard(
           child: Column(
@@ -204,28 +245,34 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         Expanded(
                           child: GestureDetector(
                             behavior: HitTestBehavior.opaque,
-                            onTap: () => setState(() => _selectedDay = _selectedDay == i ? null : i),
+                            onTap: () => setState(() =>
+                                _selectedDay = _selectedDay == i ? null : i),
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
                                 AnimatedContainer(
                                   duration: const Duration(milliseconds: 200),
                                   width: 24,
-                                  height: perDay[i] == 0 ? 3 : chartHeight * perDay[i] / maxMinutes,
+                                  height: perDay[i] == 0
+                                      ? 3
+                                      : chartHeight * perDay[i] / maxMinutes,
                                   decoration: BoxDecoration(
                                     color: _selectedDay == i
                                         ? p.primary
                                         : perDay[i] == 0
                                             ? p.surfaceContainerHigh
                                             : p.secondaryContainer,
-                                    borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
+                                    borderRadius: const BorderRadius.vertical(
+                                        top: Radius.circular(6)),
                                   ),
                                 ),
                                 const SizedBox(height: 6),
                                 Text(
                                   _dayLetters[i],
                                   style: t.labelSmall!.copyWith(
-                                    color: _selectedDay == i ? p.primary : p.onSurfaceVariant,
+                                    color: _selectedDay == i
+                                        ? p.primary
+                                        : p.onSurfaceVariant,
                                   ),
                                 ),
                               ],
@@ -242,8 +289,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     ? 'Toca un día para ver su tiempo de enfoque'
                     : '${_dayNames[_selectedDay!]}: ${_formatMinutes(perDay[_selectedDay!])}',
                 style: t.bodyMedium!.copyWith(
-                  color: _selectedDay == null ? p.onSurfaceVariant : p.onSurface,
-                  fontWeight: _selectedDay == null ? FontWeight.w400 : FontWeight.w600,
+                  color:
+                      _selectedDay == null ? p.onSurfaceVariant : p.onSurface,
+                  fontWeight:
+                      _selectedDay == null ? FontWeight.w400 : FontWeight.w600,
                 ),
               ),
             ],
@@ -258,14 +307,17 @@ class _HistoryScreenState extends State<HistoryScreen> {
     for (final s in week) {
       byTask[s.taskTitle] = (byTask[s.taskTitle] ?? 0) + s.focusSeconds;
     }
-    final entries = byTask.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+    final entries = byTask.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
     final top = entries.take(4).toList();
     final total = entries.fold<int>(0, (sum, e) => sum + e.value);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Semantics(header: true, child: Text('Tiempo por tarea', style: t.titleMedium)),
+        Semantics(
+            header: true,
+            child: Text('Tiempo por tarea', style: t.titleMedium)),
         const SizedBox(height: AppSpacing.md),
         AppCard(
           child: Column(
@@ -273,7 +325,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
               for (final e in top) ...[
                 Row(
                   children: [
-                    Expanded(child: Text(e.key, style: t.bodyMedium, overflow: TextOverflow.ellipsis)),
+                    Expanded(
+                        child: Text(e.key,
+                            style: t.bodyMedium,
+                            overflow: TextOverflow.ellipsis)),
                     const SizedBox(width: AppSpacing.sm),
                     Text(_formatMinutes(e.value ~/ 60), style: t.titleSmall),
                   ],
@@ -287,7 +342,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     color: p.primary,
                     backgroundColor: p.surfaceContainerHigh,
                     semanticsLabel: e.key,
-                    semanticsValue: '${total == 0 ? 0 : (e.value * 100 / total).round()} por ciento del tiempo',
+                    semanticsValue:
+                        '${total == 0 ? 0 : (e.value * 100 / total).round()} por ciento del tiempo',
                   ),
                 ),
                 if (e != top.last) const SizedBox(height: AppSpacing.md),
@@ -320,14 +376,17 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 label: Text(f),
                 selected: _filter == f,
                 showCheckmark: false,
-                labelStyle: TextStyle(fontWeight: FontWeight.w600, color: _filter == f ? p.onPrimary : p.onSurface),
+                labelStyle: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: _filter == f ? p.onPrimary : p.onSurface),
                 onSelected: (_) => setState(() => _filter = f),
               ),
           ],
         ),
         const SizedBox(height: AppSpacing.md),
         if (visible.isEmpty)
-          Text('No hay sesiones con este filtro.', style: t.bodyMedium!.copyWith(color: p.onSurfaceVariant)),
+          Text('No hay sesiones con este filtro.',
+              style: t.bodyMedium!.copyWith(color: p.onSurfaceVariant)),
         for (final s in visible) ...[
           _SessionTile(session: s, dateText: _sessionDate(s.startedAt)),
           const SizedBox(height: AppSpacing.sm),
@@ -390,7 +449,8 @@ class _SessionTile extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(ok ? Icons.check_circle_outline : Icons.cancel_outlined, color: ok ? p.primary : p.tertiary),
+            Icon(ok ? Icons.check_circle_outline : Icons.cancel_outlined,
+                color: ok ? p.primary : p.tertiary),
             const SizedBox(width: AppSpacing.md),
             Expanded(
               child: Column(
@@ -398,7 +458,8 @@ class _SessionTile extends StatelessWidget {
                 children: [
                   Text(session.taskTitle, style: t.titleSmall),
                   const SizedBox(height: 2),
-                  Text('$dateText · $minutes min de enfoque', style: t.bodySmall),
+                  Text('$dateText · $minutes min de enfoque',
+                      style: t.bodySmall),
                   const SizedBox(height: 4),
                   Text(
                     ok ? GoalResult.label(session.goalResult) : 'Abandonada',

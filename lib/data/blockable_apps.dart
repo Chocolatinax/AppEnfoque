@@ -19,13 +19,15 @@ class InstalledApp {
     this.essential = false,
   });
 
-  bool get isRecommended => BlockableApps.recommendedPackages.contains(packageName);
+  bool get isRecommended =>
+      BlockableApps.recommendedPackages.contains(packageName);
 }
 
 /// Apps distractoras conocidas, con sus nombres de paquete en Android.
 class BlockableApp {
   final String name;
-  final List<String> packages; // algunas apps tienen más de un paquete según el país
+  final List<String>
+      packages; // algunas apps tienen más de un paquete según el país
 
   const BlockableApp(this.name, this.packages);
 }
@@ -37,7 +39,8 @@ class BlockableApps {
   /// en iOS, esta misma lista). Cualquier otra app se puede elegir a mano en Android.
   static const List<BlockableApp> all = [
     BlockableApp('Instagram', ['com.instagram.android']),
-    BlockableApp('TikTok', ['com.zhiliaoapp.musically', 'com.ss.android.ugc.trill']),
+    BlockableApp(
+        'TikTok', ['com.zhiliaoapp.musically', 'com.ss.android.ugc.trill']),
     BlockableApp('Facebook', ['com.facebook.katana']),
     BlockableApp('X (Twitter)', ['com.twitter.android']),
     BlockableApp('YouTube', ['com.google.android.youtube']),
@@ -51,17 +54,22 @@ class BlockableApps {
   /// todas las redes sociales.
   static List<String> get defaultSelection => [for (final app in all) app.name];
 
-  static final Set<String> recommendedPackages = {for (final app in all) ...app.packages};
+  static final Set<String> recommendedPackages = {
+    for (final app in all) ...app.packages
+  };
 
   /// Catálogo como lista de apps (se usa fuera de Android).
   static List<InstalledApp> get catalogAsInstalled => [
-        for (final app in all) InstalledApp(name: app.name, packageName: app.packages.first),
+        for (final app in all)
+          InstalledApp(name: app.name, packageName: app.packages.first),
       ];
 
   /// Paquetes de Android para una lista de nombres del catálogo
   /// (compatibilidad con tareas creadas antes de guardar los paquetes).
-  static List<String> packagesFor(Iterable<String> names) =>
-      all.where((app) => names.contains(app.name)).expand((app) => app.packages).toList();
+  static List<String> packagesFor(Iterable<String> names) => all
+      .where((app) => names.contains(app.name))
+      .expand((app) => app.packages)
+      .toList();
 
   /// Nombre visible a partir de un paquete del catálogo.
   static String nameForPackage(String package) {

@@ -38,7 +38,8 @@ class ActiveSessionScreen extends StatefulWidget {
 
 class _ActiveSessionScreenState extends State<ActiveSessionScreen>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
-  late final String _sessionId = widget.restored?.sessionId ?? DateTime.now().millisecondsSinceEpoch.toString();
+  late final String _sessionId = widget.restored?.sessionId ??
+      DateTime.now().millisecondsSinceEpoch.toString();
 
   late final SessionClock _clock = SessionClock(
     phases: SessionClock.phasesFor(widget.task),
@@ -58,8 +59,10 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen>
   StreamSubscription<BlockedAppEvent>? _blockedSub;
   bool _blockingActive = false;
   bool _reminderOpen = false;
-  ValueNotifier<BlockedAppEvent>? _reminderEvent; // app que muestra el recordatorio abierto
-  late final ValueNotifier<int> _secondsLeftNotifier = ValueNotifier(_secondsLeft);
+  ValueNotifier<BlockedAppEvent>?
+      _reminderEvent; // app que muestra el recordatorio abierto
+  late final ValueNotifier<int> _secondsLeftNotifier =
+      ValueNotifier(_secondsLeft);
   late final List<String> _blockedPackages = !widget.task.blockDistractions
       ? const []
       : widget.task.blockedPackages.isNotEmpty
@@ -70,7 +73,9 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen>
   /// Nombre visible de una app bloqueada a partir de su paquete.
   String _appNameFor(String package) {
     final index = widget.task.blockedPackages.indexOf(package);
-    if (index >= 0 && index < widget.task.blockedApps.length) return widget.task.blockedApps[index];
+    if (index >= 0 && index < widget.task.blockedApps.length) {
+      return widget.task.blockedApps[index];
+    }
     return BlockableApps.nameForPackage(package);
   }
 
@@ -104,9 +109,11 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen>
         _clock.endsAt(DateTime.now()),
         update: widget.restored != null,
       );
-      NotificationService.instance.cancelScheduled(); // estamos dentro de la app
+      NotificationService.instance
+          .cancelScheduled(); // estamos dentro de la app
       if (widget.restored != null) {
-        showAppSnackBar(context, 'Retomamos tu sesión donde ibas', icon: Icons.history_rounded);
+        showAppSnackBar(context, 'Retomamos tu sesión donde ibas',
+            icon: Icons.history_rounded);
       }
       _tick(); // si se terminó mientras la app estaba cerrada, cierra la sesión
       // Si Floria se abrió porque intentaste abrir una app bloqueada, mostrar el recordatorio
@@ -164,7 +171,9 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen>
       ActiveSessionRecord.fromClock(_sessionId, widget.task.id, _clock),
     );
     // La hora de fin puede cambiar (pausa o descanso saltado)
-    NotificationService.instance.showSessionInProgress(widget.task, _clock.endsAt(DateTime.now()), update: true);
+    NotificationService.instance.showSessionInProgress(
+        widget.task, _clock.endsAt(DateTime.now()),
+        update: true);
   }
 
   void _tick() {
@@ -218,7 +227,8 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen>
   // ---------- Bloqueo de apps ----------
 
   /// Se bloquea solo durante el enfoque; en descansos, pausas y al terminar se libera.
-  bool get _shouldBlock => !_ended && _phase.isFocus && !_isPaused && _blockedPackages.isNotEmpty;
+  bool get _shouldBlock =>
+      !_ended && _phase.isFocus && !_isPaused && _blockedPackages.isNotEmpty;
 
   void _syncBlocking() {
     final should = _shouldBlock;
@@ -226,7 +236,8 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen>
     _blockingActive = should;
     if (should) {
       // Vence al terminar este bloque de enfoque (por si la app se cierra)
-      AppBlocker.instance.start(_blockedPackages, until: DateTime.now().add(Duration(seconds: _secondsLeft)));
+      AppBlocker.instance.start(_blockedPackages,
+          until: DateTime.now().add(Duration(seconds: _secondsLeft)));
     } else {
       AppBlocker.instance.stop();
       // Si empieza un descanso o termina la sesión con el recordatorio abierto, se cierra solo
@@ -301,7 +312,8 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen>
     // Si cumplió su objetivo, la tarea se marca como hecha
     if (result == GoalResult.yes) {
       final tasks = TaskScope.read(context);
-      final saved = tasks?.tasks.where((t) => t.id == widget.task.id).firstOrNull;
+      final saved =
+          tasks?.tasks.where((t) => t.id == widget.task.id).firstOrNull;
       if (saved != null && !saved.isDone) await tasks!.toggleDone(saved.id);
     }
     if (!mounted) return;
@@ -318,7 +330,9 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen>
         title: const Text('¿Abandonar la sesión?'),
         content: const Text('Se registrará como abandonada en tu historial.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Seguir enfocado')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Seguir enfocado')),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: TextButton.styleFrom(foregroundColor: p.error),
@@ -335,7 +349,8 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen>
     await _record(SessionStatus.abandoned);
     if (!mounted) return;
 
-    showAppSnackBar(context, 'Sesión registrada como abandonada', icon: Icons.close_rounded);
+    showAppSnackBar(context, 'Sesión registrada como abandonada',
+        icon: Icons.close_rounded);
     Navigator.of(context).pop();
   }
 
@@ -357,8 +372,12 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen>
 
   String get _phaseLabel {
     if (!widget.task.isPomodoro) return 'Enfoque';
-    if (_phase.isFocus) return 'Ronda ${_phase.round} de $_focusRounds · Enfoque';
-    final kind = _phase.minutes == Pomodoro.longBreakMinutes ? 'Descanso largo' : 'Descanso corto';
+    if (_phase.isFocus) {
+      return 'Ronda ${_phase.round} de $_focusRounds · Enfoque';
+    }
+    final kind = _phase.minutes == Pomodoro.longBreakMinutes
+        ? 'Descanso largo'
+        : 'Descanso corto';
     return _isLastPhase ? '$kind · Último' : kind;
   }
 
@@ -373,7 +392,8 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen>
       canPop: _ended,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) {
-          showAppSnackBar(context, 'Tu sesión sigue activa. Usa la pausa o abandona la sesión.',
+          showAppSnackBar(context,
+              'Tu sesión sigue activa. Usa la pausa o abandona la sesión.',
               icon: Icons.lock_outline);
         }
       },
@@ -384,27 +404,32 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen>
         ),
         body: SafeArea(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(AppSpacing.screen, AppSpacing.lg, AppSpacing.screen, AppSpacing.xl),
+            padding: const EdgeInsets.fromLTRB(AppSpacing.screen, AppSpacing.lg,
+                AppSpacing.screen, AppSpacing.xl),
             child: Column(
               children: [
                 // Fase actual
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                   decoration: BoxDecoration(
                     color: onBreak ? p.secondaryFixed : p.primaryFixed,
                     borderRadius: BorderRadius.circular(AppRadius.pill),
                   ),
                   child: Text(
                     _isPaused ? 'En pausa' : _phaseLabel,
-                    style: t.labelMedium!.copyWith(color: onBreak ? p.onSecondaryFixedVariant : p.onPrimaryFixed),
+                    style: t.labelMedium!.copyWith(
+                        color: onBreak
+                            ? p.onSecondaryFixedVariant
+                            : p.onPrimaryFixed),
                   ),
                 ),
                 const SizedBox(height: AppSpacing.xl),
 
                 // Círculo que "respira"
                 ScaleTransition(
-                  scale: Tween(begin: 0.92, end: 1.0)
-                      .animate(CurvedAnimation(parent: _breath, curve: Curves.easeInOut)),
+                  scale: Tween(begin: 0.92, end: 1.0).animate(CurvedAnimation(
+                      parent: _breath, curve: Curves.easeInOut)),
                   child: Container(
                     width: 120,
                     height: 120,
@@ -412,21 +437,31 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen>
                       color: onBreak ? p.secondaryFixed : p.primaryFixed,
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(onBreak ? Icons.local_cafe_outlined : Icons.spa_outlined, size: 48, color: accent),
+                    child: Icon(
+                        onBreak
+                            ? Icons.local_cafe_outlined
+                            : Icons.spa_outlined,
+                        size: 48,
+                        color: accent),
                   ),
                 ),
                 const SizedBox(height: AppSpacing.xl),
 
                 // Temporizador (el lector de pantalla lo lee en palabras)
                 Semantics(
-                  label: 'Quedan ${(_secondsLeft / 60).ceil()} minutos',
+                  label: _secondsLeft <= 60
+                      ? 'Queda menos de un minuto'
+                      : 'Quedan ${(_secondsLeft / 60).ceil()} minutos',
                   excludeSemantics: true,
-                  child: Text(
-                    _format(_secondsLeft),
-                    style: t.displaySmall!.copyWith(
-                      fontSize: 64,
-                      color: _isPaused ? p.onSurfaceVariant : accent,
-                      fontFeatures: const [FontFeature.tabularFigures()],
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      _format(_secondsLeft),
+                      style: t.displaySmall!.copyWith(
+                        fontSize: 64,
+                        color: _isPaused ? p.onSurfaceVariant : accent,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
                     ),
                   ),
                 ),
@@ -447,17 +482,21 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Tu objetivo', style: t.labelMedium!.copyWith(color: p.primary)),
+                      Text('Tu objetivo',
+                          style: t.labelMedium!.copyWith(color: p.primary)),
                       const SizedBox(height: AppSpacing.xs),
                       Text(widget.task.goal, style: t.titleMedium),
                       const SizedBox(height: AppSpacing.xs),
                       Text(widget.task.title, style: t.bodySmall),
-                      if (widget.task.blockDistractions && widget.task.blockedApps.isNotEmpty && !onBreak) ...[
+                      if (widget.task.blockDistractions &&
+                          widget.task.blockedApps.isNotEmpty &&
+                          !onBreak) ...[
                         const SizedBox(height: AppSpacing.md),
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(Icons.lock_outline, size: 16, color: p.tertiary),
+                            Icon(Icons.lock_outline,
+                                size: 16, color: p.tertiary),
                             const SizedBox(width: AppSpacing.xs),
                             Expanded(
                               child: Text(
@@ -479,12 +518,18 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen>
                   child: onBreak
                       ? OutlinedButton.icon(
                           onPressed: _skipBreak,
-                          icon: Icon(_isLastPhase ? Icons.flag_outlined : Icons.skip_next_rounded),
-                          label: Text(_isLastPhase ? 'Terminar sesión' : 'Saltar descanso'),
+                          icon: Icon(_isLastPhase
+                              ? Icons.flag_outlined
+                              : Icons.skip_next_rounded),
+                          label: Text(_isLastPhase
+                              ? 'Terminar sesión'
+                              : 'Saltar descanso'),
                         )
                       : OutlinedButton.icon(
                           onPressed: _toggleEmergencyPause,
-                          icon: Icon(_isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded),
+                          icon: Icon(_isPaused
+                              ? Icons.play_arrow_rounded
+                              : Icons.pause_rounded),
                           label: Text(_isPaused
                               ? 'Reanudar ahora (${_format(_pauseSecondsLeft)})'
                               : 'Pausa de emergencia (2 min)'),
@@ -516,32 +561,39 @@ class _GoalResultDialog extends StatelessWidget {
     final p = context.palette;
     final t = Theme.of(context).textTheme;
 
-    return AlertDialog(
-      icon: Icon(Icons.emoji_events_outlined, color: p.primary, size: 36),
-      title: const Text('¡Sesión completada!'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text('¿Cumpliste tu objetivo?', textAlign: TextAlign.center, style: t.titleMedium),
-          const SizedBox(height: AppSpacing.xs),
-          Text('"$goal"', textAlign: TextAlign.center, style: t.bodyMedium!.copyWith(color: p.onSurfaceVariant)),
-          const SizedBox(height: AppSpacing.xl),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, GoalResult.yes),
-            child: const Text('Sí, lo cumplí'),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          OutlinedButton(
-            onPressed: () => Navigator.pop(context, GoalResult.partly),
-            child: const Text('En parte'),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          TextButton(
-            onPressed: () => Navigator.pop(context, GoalResult.no),
-            child: const Text('No lo cumplí'),
-          ),
-        ],
+    // Sin respuesta no se cierra: el botón Atrás no debe saltarse la pregunta (R2)
+    return PopScope(
+      canPop: false,
+      child: AlertDialog(
+        icon: Icon(Icons.emoji_events_outlined, color: p.primary, size: 36),
+        title: const Text('¡Sesión completada!'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('¿Cumpliste tu objetivo?',
+                textAlign: TextAlign.center, style: t.titleMedium),
+            const SizedBox(height: AppSpacing.xs),
+            Text('"$goal"',
+                textAlign: TextAlign.center,
+                style: t.bodyMedium!.copyWith(color: p.onSurfaceVariant)),
+            const SizedBox(height: AppSpacing.xl),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, GoalResult.yes),
+              child: const Text('Sí, lo cumplí'),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            OutlinedButton(
+              onPressed: () => Navigator.pop(context, GoalResult.partly),
+              child: const Text('En parte'),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            TextButton(
+              onPressed: () => Navigator.pop(context, GoalResult.no),
+              child: const Text('No lo cumplí'),
+            ),
+          ],
+        ),
       ),
     );
   }

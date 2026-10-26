@@ -7,6 +7,7 @@ import '../utils/ui_feedback.dart';
 import '../widgets/common/app_card.dart';
 import '../services/notification_service.dart';
 import 'about_screen.dart';
+import 'legal_screen.dart';
 import 'blocking_permission_screen.dart';
 import 'welcome_screen.dart';
 
@@ -26,7 +27,9 @@ class SettingsScreen extends StatelessWidget {
           'Esta acción no se puede deshacer.',
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancelar')),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: TextButton.styleFrom(foregroundColor: p.error),
@@ -59,7 +62,8 @@ class SettingsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Ajustes')),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(AppSpacing.screen, AppSpacing.sm, AppSpacing.screen, AppSpacing.xxl),
+        padding: const EdgeInsets.fromLTRB(AppSpacing.screen, AppSpacing.sm,
+            AppSpacing.screen, AppSpacing.xxl),
         children: [
           // Aviso de privacidad local
           AppCard(
@@ -74,7 +78,8 @@ class SettingsScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('Tus datos viven en este teléfono',
-                          style: t.titleMedium!.copyWith(color: p.onPrimaryFixed)),
+                          style:
+                              t.titleMedium!.copyWith(color: p.onPrimaryFixed)),
                       const SizedBox(height: 2),
                       Text(
                         'Floria funciona sin cuenta y sin internet. Nadie más puede ver tus tareas ni tu historial.',
@@ -94,7 +99,8 @@ class SettingsScreen extends StatelessWidget {
               title: 'Permisos de bloqueo',
               subtitle: 'Necesarios para bloquear apps durante la sesión',
               onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const BlockingPermissionScreen()),
+                MaterialPageRoute(
+                    builder: (_) => const BlockingPermissionScreen()),
               ),
             ),
             _SettingsTile(
@@ -102,14 +108,17 @@ class SettingsScreen extends StatelessWidget {
               title: 'Notificaciones',
               subtitle: 'Avisos al iniciar y terminar una sesión',
               onTap: () async {
-                final granted = await NotificationService.instance.requestPermission();
+                final granted =
+                    await NotificationService.instance.requestPermission();
                 if (!context.mounted) return;
                 showAppSnackBar(
                   context,
                   granted
                       ? 'Las notificaciones están activadas'
                       : 'Actívalas en los ajustes del teléfono: Apps → Floria → Notificaciones',
-                  icon: granted ? Icons.notifications_active_outlined : Icons.notifications_off_outlined,
+                  icon: granted
+                      ? Icons.notifications_active_outlined
+                      : Icons.notifications_off_outlined,
                 );
               },
             ),
@@ -134,6 +143,26 @@ class SettingsScreen extends StatelessWidget {
               subtitle: 'Versión, equipo y lo que viene',
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute(builder: (_) => const AboutScreen()),
+              ),
+            ),
+            _SettingsTile(
+              icon: Icons.description_outlined,
+              title: 'Términos de uso',
+              subtitle: 'Las reglas para usar Floria',
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                    builder: (_) =>
+                        const LegalScreen(document: LegalDocument.terms)),
+              ),
+            ),
+            _SettingsTile(
+              icon: Icons.lock_outline,
+              title: 'Política de privacidad',
+              subtitle: 'Qué se guarda y para qué sirve cada permiso',
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                    builder: (_) =>
+                        const LegalScreen(document: LegalDocument.privacy)),
               ),
             ),
           ]),
@@ -198,9 +227,12 @@ class _SettingsTile extends StatelessWidget {
       onTap: onTap,
       minVerticalPadding: 12,
       leading: Icon(icon, color: destructive ? p.error : p.onSurfaceVariant),
-      title: Text(title, style: TextStyle(fontWeight: FontWeight.w600, color: color)),
+      title: Text(title,
+          style: TextStyle(fontWeight: FontWeight.w600, color: color)),
       subtitle: Text(subtitle, style: TextStyle(color: p.onSurfaceVariant)),
-      trailing: destructive ? null : Icon(Icons.chevron_right, color: p.onSurfaceVariant),
+      trailing: destructive
+          ? null
+          : Icon(Icons.chevron_right, color: p.onSurfaceVariant),
     );
   }
 }

@@ -57,7 +57,8 @@ class TaskRepository extends ChangeNotifier {
 
   /// Guarda los cambios de una tarea existente (Editar tarea).
   Future<void> update(Task task) async {
-    await _database.db.update('tasks', task.toDbMap(), where: 'id = ?', whereArgs: [task.id]);
+    await _database.db
+        .update('tasks', task.toDbMap(), where: 'id = ?', whereArgs: [task.id]);
     final index = _tasks.indexWhere((t) => t.id == task.id);
     if (index >= 0) {
       _tasks[index] = task;
@@ -90,7 +91,8 @@ class TaskRepository extends ChangeNotifier {
   void _sort() {
     _tasks.sort((a, b) {
       if (a.isDone != b.isDone) return a.isDone ? 1 : -1;
-      final byPriority = Task.priorityRank(a.priority).compareTo(Task.priorityRank(b.priority));
+      final byPriority = Task.priorityRank(a.priority)
+          .compareTo(Task.priorityRank(b.priority));
       if (byPriority != 0) return byPriority;
       // Con la misma prioridad, las más nuevas arriba (como en las redes sociales)
       return b.createdAt.compareTo(a.createdAt);

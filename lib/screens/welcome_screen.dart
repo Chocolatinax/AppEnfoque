@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'legal_screen.dart';
 import '../theme/app_palette.dart';
 import '../theme/app_spacing.dart';
 import 'main_shell.dart';
@@ -15,38 +16,9 @@ class WelcomeScreen extends StatelessWidget {
     );
   }
 
-  void _showLegalSheet(BuildContext context, String title) {
-    final p = context.palette;
-    showModalBottomSheet(
-      context: context,
-      showDragHandle: true,
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: Theme.of(ctx).textTheme.titleLarge),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                'Floria funciona sin cuenta y sin conexión. Tus tareas, sesiones e '
-                'historial se guardan únicamente en este dispositivo. El texto legal '
-                'completo se agregará más adelante.',
-                style: Theme.of(ctx).textTheme.bodyMedium!.copyWith(color: p.onSurfaceVariant),
-              ),
-              const SizedBox(height: AppSpacing.xl),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  child: const Text('Entendido'),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+  void _openLegal(BuildContext context, LegalDocument document) {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => LegalScreen(document: document)),
     );
   }
 
@@ -66,15 +38,16 @@ class WelcomeScreen extends StatelessWidget {
                 children: [
                   // Logo
                   Image.asset(
-                      Theme.of(context).brightness == Brightness.dark
-                          ? 'assets/branding/floria_isotipo_claro.png'
-                          : 'assets/branding/floria_isotipo_verde.png',
-                      width: 112,
-                      height: 112,
-                      semanticLabel: 'Logo de Floria',
-                    ),
+                    Theme.of(context).brightness == Brightness.dark
+                        ? 'assets/branding/floria_isotipo_claro.png'
+                        : 'assets/branding/floria_isotipo_verde.png',
+                    width: 112,
+                    height: 112,
+                    semanticLabel: 'Logo de Floria',
+                  ),
                   const SizedBox(height: AppSpacing.xl),
-                  Text('Floria', style: t.headlineMedium!.copyWith(fontSize: 34)),
+                  Text('Floria',
+                      style: t.headlineMedium!.copyWith(fontSize: 34)),
                   const SizedBox(height: AppSpacing.sm),
                   Text(
                     'Concéntrate en una tarea a la vez, sin distracciones.',
@@ -116,13 +89,17 @@ class WelcomeScreen extends StatelessWidget {
                     crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       TextButton(
-                        onPressed: () => _showLegalSheet(context, 'Términos de servicio'),
-                        child: const Text('Términos', style: TextStyle(fontSize: 13)),
+                        onPressed: () =>
+                            _openLegal(context, LegalDocument.terms),
+                        child: const Text('Términos',
+                            style: TextStyle(fontSize: 13)),
                       ),
                       Text('·', style: TextStyle(color: p.onSurfaceVariant)),
                       TextButton(
-                        onPressed: () => _showLegalSheet(context, 'Política de privacidad'),
-                        child: const Text('Privacidad', style: TextStyle(fontSize: 13)),
+                        onPressed: () =>
+                            _openLegal(context, LegalDocument.privacy),
+                        child: const Text('Privacidad',
+                            style: TextStyle(fontSize: 13)),
                       ),
                     ],
                   ),
@@ -141,7 +118,8 @@ class _Benefit extends StatelessWidget {
   final String title;
   final String subtitle;
 
-  const _Benefit({required this.icon, required this.title, required this.subtitle});
+  const _Benefit(
+      {required this.icon, required this.title, required this.subtitle});
 
   @override
   Widget build(BuildContext context) {
@@ -162,7 +140,8 @@ class _Benefit extends StatelessWidget {
                 children: [
                   Text(title, style: t.titleMedium),
                   const SizedBox(height: 2),
-                  Text(subtitle, style: t.bodyMedium!.copyWith(color: p.onSurfaceVariant)),
+                  Text(subtitle,
+                      style: t.bodyMedium!.copyWith(color: p.onSurfaceVariant)),
                 ],
               ),
             ),

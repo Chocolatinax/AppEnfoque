@@ -15,7 +15,10 @@ void main() {
       final packages = BlockableApps.packagesFor(['Instagram', 'TikTok']);
       expect(packages, contains('com.instagram.android'));
       // TikTok tiene dos paquetes según el país; se bloquean ambos
-      expect(packages, containsAll(['com.zhiliaoapp.musically', 'com.ss.android.ugc.trill']));
+      expect(
+          packages,
+          containsAll(
+              ['com.zhiliaoapp.musically', 'com.ss.android.ugc.trill']));
       expect(packages, isNot(contains('com.google.android.youtube')));
     });
 
@@ -24,8 +27,10 @@ void main() {
     });
 
     test('Obtiene el nombre visible a partir del paquete', () {
-      expect(BlockableApps.nameForPackage('com.google.android.youtube'), 'YouTube');
-      expect(BlockableApps.nameForPackage('com.ss.android.ugc.trill'), 'TikTok');
+      expect(BlockableApps.nameForPackage('com.google.android.youtube'),
+          'YouTube');
+      expect(
+          BlockableApps.nameForPackage('com.ss.android.ugc.trill'), 'TikTok');
       expect(BlockableApps.nameForPackage('com.desconocida'), 'Esta app');
     });
 
@@ -41,7 +46,8 @@ void main() {
       // Las pruebas corren en la computadora (no Android)
       expect(blocker.isSupported, isFalse);
       expect(await blocker.isEnabled(), isFalse);
-      await blocker.start(['com.instagram.android'], until: DateTime.now().add(const Duration(minutes: 25)));
+      await blocker.start(['com.instagram.android'],
+          until: DateTime.now().add(const Duration(minutes: 25)));
       expect(await blocker.consumePendingBlockedApp(), isNull);
       await blocker.stop();
       await blocker.openSettings();
@@ -51,11 +57,16 @@ void main() {
   group('Pantalla de apps a bloquear', () {
     const apps = [
       InstalledApp(name: 'Instagram', packageName: 'com.instagram.android'),
-      InstalledApp(name: 'Calculadora', packageName: 'com.google.android.calculator'),
-      InstalledApp(name: 'Teléfono', packageName: 'com.google.android.dialer', essential: true),
+      InstalledApp(
+          name: 'Calculadora', packageName: 'com.google.android.calculator'),
+      InstalledApp(
+          name: 'Teléfono',
+          packageName: 'com.google.android.dialer',
+          essential: true),
     ];
 
-    Future<Set<String>?> openPicker(WidgetTester tester, Future<void> Function() actions) async {
+    Future<Set<String>?> openPicker(
+        WidgetTester tester, Future<void> Function() actions) async {
       Set<String>? result;
       await tester.pumpWidget(MaterialApp(
         theme: AppTheme.light,
@@ -63,7 +74,9 @@ void main() {
           builder: (context) => TextButton(
             onPressed: () async {
               result = await Navigator.of(context).push<Set<String>>(
-                MaterialPageRoute(builder: (_) => const AppPickerScreen(apps: apps, initialSelection: {})),
+                MaterialPageRoute(
+                    builder: (_) => const AppPickerScreen(
+                        apps: apps, initialSelection: {})),
               );
             },
             child: const Text('abrir'),
@@ -78,7 +91,8 @@ void main() {
       return result;
     }
 
-    testWidgets('"Recomendadas" marca solo las redes sociales instaladas', (tester) async {
+    testWidgets('"Recomendadas" marca solo las redes sociales instaladas',
+        (tester) async {
       final result = await openPicker(tester, () async {
         await tester.tap(find.text('Recomendadas'));
         await tester.pumpAndSettle();
@@ -91,10 +105,12 @@ void main() {
         await tester.tap(find.text('Todas'));
         await tester.pumpAndSettle();
       });
-      expect(result, {'com.instagram.android', 'com.google.android.calculator'});
+      expect(
+          result, {'com.instagram.android', 'com.google.android.calculator'});
     });
 
-    testWidgets('El buscador filtra la lista y se puede marcar a mano', (tester) async {
+    testWidgets('El buscador filtra la lista y se puede marcar a mano',
+        (tester) async {
       final result = await openPicker(tester, () async {
         await tester.enterText(find.byType(TextField), 'telé');
         await tester.pumpAndSettle();

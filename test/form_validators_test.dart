@@ -71,10 +71,13 @@ void main() {
       );
     });
 
-    test('Objetivo corto pero concreto (4 palabras, 15+ caracteres) es aceptado', () {
+    test(
+        'Objetivo corto pero concreto (4 palabras, 15+ caracteres) es aceptado',
+        () {
       expect(FormValidators.validateGoal('Leer el capítulo 3'), isNull);
       // Espacios de más no cuentan como palabras
-      expect(FormValidators.validateGoal('  Leer   el   capítulo   3  '), isNull);
+      expect(
+          FormValidators.validateGoal('  Leer   el   capítulo   3  '), isNull);
     });
 
     test('Objetivo válido es aceptado', () {
@@ -141,7 +144,8 @@ void main() {
       );
     });
 
-    test('TC-10: Configuración completa válida pasa todas las validaciones', () {
+    test('TC-10: Configuración completa válida pasa todas las validaciones',
+        () {
       const title = 'Estudiar Cálculo III';
       const goal = 'Resolver los 5 ejercicios de integrales triples';
       const duration = '45';

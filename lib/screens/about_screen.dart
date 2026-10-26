@@ -20,11 +20,31 @@ class AboutScreen extends StatelessWidget {
   ];
 
   static const _upcoming = [
-    (Icons.local_florist_outlined, 'Un jardín que crece con tus sesiones', 'Cada sesión completada hará crecer tu jardín.'),
-    (Icons.cloud_outlined, 'Respaldo en la nube', 'Usa Floria en varios dispositivos sin perder tu historial.'),
-    (Icons.group_outlined, 'Sesiones acompañadas', 'Enfócate al mismo tiempo que tus amigos.'),
-    (Icons.auto_awesome_outlined, 'Asistente para dividir tareas', 'Convierte una tarea grande en varias sesiones.'),
-    (Icons.headphones_outlined, 'Música ambiental', 'Sonidos para acompañar tu concentración.'),
+    (
+      Icons.local_florist_outlined,
+      'Un jardín que crece con tus sesiones',
+      'Cada sesión completada hará crecer tu jardín.'
+    ),
+    (
+      Icons.cloud_outlined,
+      'Respaldo en la nube',
+      'Usa Floria en varios dispositivos sin perder tu historial.'
+    ),
+    (
+      Icons.group_outlined,
+      'Sesiones acompañadas',
+      'Enfócate al mismo tiempo que tus amigos.'
+    ),
+    (
+      Icons.auto_awesome_outlined,
+      'Asistente para dividir tareas',
+      'Convierte una tarea grande en varias sesiones.'
+    ),
+    (
+      Icons.headphones_outlined,
+      'Música ambiental',
+      'Sonidos para acompañar tu concentración.'
+    ),
   ];
 
   @override
@@ -35,7 +55,8 @@ class AboutScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Acerca de Floria')),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(AppSpacing.screen, AppSpacing.lg, AppSpacing.screen, AppSpacing.xxl),
+        padding: const EdgeInsets.fromLTRB(AppSpacing.screen, AppSpacing.lg,
+            AppSpacing.screen, AppSpacing.xxl),
         children: [
           Center(
             child: Image.asset(
@@ -57,9 +78,10 @@ class AboutScreen extends StatelessWidget {
             textAlign: TextAlign.center,
             style: t.bodyMedium!.copyWith(color: p.onSurfaceVariant),
           ),
-
           const SizedBox(height: AppSpacing.xxl),
-          Semantics(header: true, child: Text('Próximamente en Floria', style: t.titleLarge)),
+          Semantics(
+              header: true,
+              child: Text('Próximamente en Floria', style: t.titleLarge)),
           const SizedBox(height: AppSpacing.xs),
           Text(
             'Ideas que forman parte de nuestra visión, pero no de esta versión.',
@@ -73,17 +95,21 @@ class AboutScreen extends StatelessWidget {
                 for (final (icon, title, subtitle) in _upcoming)
                   ListTile(
                     leading: Icon(icon, color: p.secondary),
-                    title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-                    subtitle: Text(subtitle, style: TextStyle(color: p.onSurfaceVariant)),
+                    title: Text(title,
+                        style: const TextStyle(fontWeight: FontWeight.w600)),
+                    subtitle: Text(subtitle,
+                        style: TextStyle(color: p.onSurfaceVariant)),
                   ),
               ],
             ),
           ),
-
           const SizedBox(height: AppSpacing.xxl),
-          Semantics(header: true, child: Text('Hecha por el Grupo 6', style: t.titleLarge)),
+          Semantics(
+              header: true,
+              child: Text('Hecha por el Grupo 6', style: t.titleLarge)),
           const SizedBox(height: AppSpacing.sm),
-          Text(_team.join(' · '), style: t.bodyMedium!.copyWith(color: p.onSurfaceVariant)),
+          Text(_team.join(' · '),
+              style: t.bodyMedium!.copyWith(color: p.onSurfaceVariant)),
           const SizedBox(height: AppSpacing.xs),
           Text('ESEN · 2026', style: t.bodySmall),
         ],

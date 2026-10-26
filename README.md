@@ -54,7 +54,7 @@ Floria está pensada para estudiantes de bachillerato y universidad (de 15 a 25 
 | **Recordatorio** | Aparece cuando se abre una app bloqueada: dice qué app es, cuánto falta y el objetivo, con un solo botón "Volver a mi sesión". |
 | **Enfoque** | Resumen del día y tareas pendientes para empezar una sesión. |
 | **Historial** | Resumen semanal: minutos de enfoque, racha, actividad por día y sesiones recientes con su estado. |
-| **Ajustes** | Permisos de bloqueo, notificaciones, reinicio de datos y "Acerca de Floria". |
+| **Ajustes** | Permisos de bloqueo, notificaciones, reinicio de datos, "Acerca de Floria", Términos de uso y Política de privacidad. |
 
 Además:
 
@@ -224,6 +224,7 @@ dart format lib   # Da formato al código
 | `test/session_clock_test.dart` | El reloj de la sesión (R5): tiempo real con la app cerrada, pausas y descansos. |
 | `test/notification_plan_test.dart` | Qué avisos se programan y a qué hora. |
 | `test/app_blocking_test.dart` | El catálogo de apps bloqueables y la selección. |
+| `test/legal_screen_test.dart` | Términos y privacidad, con las guías automáticas de accesibilidad (contraste, áreas táctiles y texto al 200 %). |
 
 Las pruebas de base de datos usan `sqflite_common_ffi`, así que corren en la computadora sin emulador.
 
@@ -259,7 +260,8 @@ AppEnfoque/
 │   │   ├── session_launcher.dart # Pide los permisos antes de iniciar una sesión
 │   │   ├── blocking_permission_screen.dart
 │   │   ├── blocked_app_reminder_screen.dart # Recordatorio de app bloqueada (R1)
-│   │   └── app_picker_screen.dart
+│   │   ├── app_picker_screen.dart
+│   │   └── legal_screen.dart     # Términos de uso y Política de privacidad
 │   ├── theme/                    # Diseño
 │   │   ├── app_colors.dart       # Paleta Salvia
 │   │   ├── app_palette.dart      # Colores para modo claro y oscuro

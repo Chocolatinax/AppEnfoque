@@ -26,7 +26,8 @@ class AppBlocker {
 
   static const MethodChannel _channel = MethodChannel('floria/app_blocker');
 
-  final StreamController<BlockedAppEvent> _events = StreamController<BlockedAppEvent>.broadcast();
+  final StreamController<BlockedAppEvent> _events =
+      StreamController<BlockedAppEvent>.broadcast();
 
   /// Se emite cada vez que el usuario intenta abrir una app bloqueada.
   Stream<BlockedAppEvent> get blockedAppOpened => _events.stream;
@@ -52,7 +53,9 @@ class AppBlocker {
     if (!isSupported) return BlockableApps.catalogAsInstalled;
     if (_cachedApps != null && !refresh) return _cachedApps!;
     try {
-      final raw = await _channel.invokeListMethod<Map<Object?, Object?>>('getLaunchableApps') ?? [];
+      final raw = await _channel
+              .invokeListMethod<Map<Object?, Object?>>('getLaunchableApps') ??
+          [];
       _cachedApps = [
         for (final item in raw)
           InstalledApp(
@@ -74,14 +77,16 @@ class AppBlocker {
 
   /// Empieza a bloquear los [packages] hasta [until] (fin del bloque de enfoque).
   /// Si Floria se cierra y no se vuelve a abrir, el bloqueo se libera solo a esa hora.
-  Future<void> start(List<String> packages, {required DateTime until}) =>
-      _call('startBlocking', {'packages': packages, 'until': until.millisecondsSinceEpoch});
+  Future<void> start(List<String> packages, {required DateTime until}) => _call(
+      'startBlocking',
+      {'packages': packages, 'until': until.millisecondsSinceEpoch});
 
   /// Aviso de app bloqueada que llegó mientras Floria estaba cerrada (o null).
   Future<BlockedAppEvent?> consumePendingBlockedApp() async {
     if (!isSupported) return null;
     try {
-      final raw = await _channel.invokeMapMethod<String, Object?>('consumePendingBlockedApp');
+      final raw = await _channel
+          .invokeMapMethod<String, Object?>('consumePendingBlockedApp');
       if (raw == null) return null;
       return BlockedAppEvent(
         raw['package'] as String,

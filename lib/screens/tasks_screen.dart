@@ -50,10 +50,28 @@ class _TasksScreenState extends State<TasksScreen> {
   }
 
   // ---------- Saludo y fecha en español ----------
-  static const _weekdays = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
+  static const _weekdays = [
+    'lunes',
+    'martes',
+    'miércoles',
+    'jueves',
+    'viernes',
+    'sábado',
+    'domingo'
+  ];
   static const _months = [
-    'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-    'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
+    'enero',
+    'febrero',
+    'marzo',
+    'abril',
+    'mayo',
+    'junio',
+    'julio',
+    'agosto',
+    'septiembre',
+    'octubre',
+    'noviembre',
+    'diciembre',
   ];
 
   String get _greeting {
@@ -80,80 +98,84 @@ class _TasksScreenState extends State<TasksScreen> {
     final all = repo.tasks;
     final pendingCount = repo.pendingTasks.length;
     final next = repo.nextTask;
-    final visible = _filter == 'Todas' ? all : all.where((t) => t.priority == _filter).toList();
+    final visible = _filter == 'Todas'
+        ? all
+        : all.where((t) => t.priority == _filter).toList();
 
     return Scaffold(
-      appBar: EnfoqueAppBar(title: 'Tareas', onSettingsTap: widget.onOpenSettings),
+      appBar:
+          EnfoqueAppBar(title: 'Tareas', onSettingsTap: widget.onOpenSettings),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => widget.onNavigate(MainShell.tabNueva),
         icon: const Icon(Icons.add),
         label: const Text('Nueva tarea'),
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(AppSpacing.screen, AppSpacing.sm, AppSpacing.screen, 112),
+        padding: const EdgeInsets.fromLTRB(
+            AppSpacing.screen, AppSpacing.sm, AppSpacing.screen, 112),
         children: [
           Text(_greeting, style: t.headlineMedium),
           const SizedBox(height: 2),
-          Text(_todayText, style: t.bodyMedium!.copyWith(color: p.onSurfaceVariant)),
+          Text(_todayText,
+              style: t.bodyMedium!.copyWith(color: p.onSurfaceVariant)),
           const SizedBox(height: AppSpacing.xl),
-
           if (all.isEmpty)
-            _EmptyTasksCard(onCreate: () => widget.onNavigate(MainShell.tabNueva))
+            _EmptyTasksCard(
+                onCreate: () => widget.onNavigate(MainShell.tabNueva))
           else if (next != null)
             _NextTaskCard(task: next, onStart: () => _startSession(next))
           else
             const _AllDoneCard(),
-
           if (all.isNotEmpty) ...[
-          const SizedBox(height: AppSpacing.xxl),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Expanded(child: Text('Tus tareas', style: t.titleLarge)),
-              Text(
-                '$pendingCount de ${all.length} pendientes',
-                style: t.bodySmall,
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.md),
-          Wrap(
-            spacing: AppSpacing.sm,
-            children: [
-              for (final f in _filters)
-                ChoiceChip(
-                  label: Text(f),
-                  selected: _filter == f,
-                  showCheckmark: false,
-                  labelStyle: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: _filter == f ? p.onPrimary : p.onSurface,
-                  ),
-                  onSelected: (_) => setState(() => _filter = f),
+            const SizedBox(height: AppSpacing.xxl),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Expanded(child: Text('Tus tareas', style: t.titleLarge)),
+                Text(
+                  '$pendingCount de ${all.length} pendientes',
+                  style: t.bodySmall,
                 ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.md),
-          for (final task in visible) ...[
-            _TaskTile(
-              task: task,
-              done: task.isDone,
-              onToggle: () => repo.toggleDone(task.id),
-              onStart: () => _startSession(task),
-              onEdit: () => _editTask(task),
-              onDelete: () => _deleteTask(task),
+              ],
             ),
-            const SizedBox(height: AppSpacing.sm),
-          ],
-          if (visible.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
-              child: Text(
-                'No tienes tareas con prioridad ${_filter.toLowerCase()}.',
-                textAlign: TextAlign.center,
-                style: t.bodyMedium!.copyWith(color: p.onSurfaceVariant),
+            const SizedBox(height: AppSpacing.md),
+            Wrap(
+              spacing: AppSpacing.sm,
+              children: [
+                for (final f in _filters)
+                  ChoiceChip(
+                    label: Text(f),
+                    selected: _filter == f,
+                    showCheckmark: false,
+                    labelStyle: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: _filter == f ? p.onPrimary : p.onSurface,
+                    ),
+                    onSelected: (_) => setState(() => _filter = f),
+                  ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.md),
+            for (final task in visible) ...[
+              _TaskTile(
+                task: task,
+                done: task.isDone,
+                onToggle: () => repo.toggleDone(task.id),
+                onStart: () => _startSession(task),
+                onEdit: () => _editTask(task),
+                onDelete: () => _deleteTask(task),
               ),
-            ),
+              const SizedBox(height: AppSpacing.sm),
+            ],
+            if (visible.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
+                child: Text(
+                  'No tienes tareas con prioridad ${_filter.toLowerCase()}.',
+                  textAlign: TextAlign.center,
+                  style: t.bodyMedium!.copyWith(color: p.onSurfaceVariant),
+                ),
+              ),
           ],
         ],
       ),
@@ -178,11 +200,13 @@ class _NextTaskCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Tu siguiente tarea', style: t.labelMedium!.copyWith(color: p.primary)),
+          Text('Tu siguiente tarea',
+              style: t.labelMedium!.copyWith(color: p.primary)),
           const SizedBox(height: AppSpacing.sm),
           Text(task.title, style: t.titleLarge),
           const SizedBox(height: AppSpacing.xs),
-          Text(task.goal, style: t.bodyMedium!.copyWith(color: p.onSurfaceVariant)),
+          Text(task.goal,
+              style: t.bodyMedium!.copyWith(color: p.onSurfaceVariant)),
           const SizedBox(height: AppSpacing.md),
           Row(
             children: [
@@ -190,7 +214,9 @@ class _NextTaskCard extends StatelessWidget {
               const SizedBox(width: AppSpacing.md),
               Icon(Icons.schedule, size: 16, color: p.onSurfaceVariant),
               const SizedBox(width: 4),
-              Flexible(child: Text(task.durationLabel, style: t.bodySmall, overflow: TextOverflow.ellipsis)),
+              Flexible(
+                  child: Text(task.durationLabel,
+                      style: t.bodySmall, overflow: TextOverflow.ellipsis)),
             ],
           ),
           const SizedBox(height: AppSpacing.lg),
@@ -225,7 +251,8 @@ class _EmptyTasksCard extends StatelessWidget {
         children: [
           Icon(Icons.edit_note_rounded, size: 40, color: p.primary),
           const SizedBox(height: AppSpacing.md),
-          Text('Crea tu primera tarea', style: t.titleLarge, textAlign: TextAlign.center),
+          Text('Crea tu primera tarea',
+              style: t.titleLarge, textAlign: TextAlign.center),
           const SizedBox(height: AppSpacing.xs),
           Text(
             'Escribe qué quieres lograr y cuánto tiempo le dedicarás. Floria te ayuda a enfocarte en ella.',
@@ -304,7 +331,9 @@ class _TaskTile extends StatelessWidget {
         children: [
           // Checkbox de Material: área táctil de 48 dp y estado anunciado al lector
           Semantics(
-            label: done ? 'Desmarcar ${task.title}' : 'Marcar como hecha ${task.title}',
+            label: done
+                ? 'Desmarcar ${task.title}'
+                : 'Marcar como hecha ${task.title}',
             child: Checkbox(
               value: done,
               onChanged: (_) => onToggle(),
@@ -326,7 +355,10 @@ class _TaskTile extends StatelessWidget {
                   children: [
                     PriorityChip(priority: task.priority),
                     const SizedBox(width: AppSpacing.sm),
-                    Flexible(child: Text(task.durationLabel, style: t.bodySmall, overflow: TextOverflow.ellipsis)),
+                    Flexible(
+                        child: Text(task.durationLabel,
+                            style: t.bodySmall,
+                            overflow: TextOverflow.ellipsis)),
                   ],
                 ),
               ],
@@ -342,7 +374,8 @@ class _TaskTile extends StatelessWidget {
           PopupMenuButton<_TaskAction>(
             tooltip: 'Más opciones: ${task.title}',
             icon: Icon(Icons.more_vert, color: p.onSurfaceVariant),
-            onSelected: (action) => action == _TaskAction.edit ? onEdit() : onDelete(),
+            onSelected: (action) =>
+                action == _TaskAction.edit ? onEdit() : onDelete(),
             itemBuilder: (context) => [
               PopupMenuItem(
                 value: _TaskAction.edit,

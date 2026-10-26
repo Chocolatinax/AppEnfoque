@@ -25,7 +25,8 @@ class NotificationService {
   NotificationService._();
   static final NotificationService instance = NotificationService._();
 
-  final FlutterLocalNotificationsPlugin _plugin = FlutterLocalNotificationsPlugin();
+  final FlutterLocalNotificationsPlugin _plugin =
+      FlutterLocalNotificationsPlugin();
   bool _ready = false;
 
   static const int _ongoingId = 1;
@@ -60,12 +61,14 @@ class NotificationService {
     try {
       if (Platform.isAndroid) {
         return await _plugin
-                .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+                .resolvePlatformSpecificImplementation<
+                    AndroidFlutterLocalNotificationsPlugin>()
                 ?.requestNotificationsPermission() ??
             false;
       }
       return await _plugin
-              .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>()
+              .resolvePlatformSpecificImplementation<
+                  IOSFlutterLocalNotificationsPlugin>()
               ?.requestPermissions(alert: true, sound: true) ??
           false;
     } catch (_) {
@@ -77,7 +80,8 @@ class NotificationService {
 
   /// "Sesión de enfoque en curso · Termina a las HH:MM".
   /// En Android queda fija; con [update] solo se actualiza la hora (sin sonar de nuevo).
-  Future<void> showSessionInProgress(Task task, DateTime endsAt, {bool update = false}) async {
+  Future<void> showSessionInProgress(Task task, DateTime endsAt,
+      {bool update = false}) async {
     if (!_ready) return;
     if (update && Platform.isIOS) return; // en iOS no hay notificaciones fijas
     try {
@@ -89,7 +93,8 @@ class NotificationService {
           android: AndroidNotificationDetails(
             'sesion_en_curso',
             'Sesión en curso',
-            channelDescription: 'Muestra que tienes una sesión de enfoque activa',
+            channelDescription:
+                'Muestra que tienes una sesión de enfoque activa',
             importance: Importance.low,
             priority: Priority.low,
             ongoing: true,
@@ -114,7 +119,8 @@ class NotificationService {
     var mode = AndroidScheduleMode.inexactAllowWhileIdle;
     try {
       final exact = await _plugin
-          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>()
           ?.canScheduleExactNotifications();
       if (exact == true) mode = AndroidScheduleMode.exactAllowWhileIdle;
     } catch (_) {}
@@ -132,7 +138,8 @@ class NotificationService {
             android: AndroidNotificationDetails(
               'avisos_sesion',
               'Avisos de la sesión',
-              channelDescription: 'Fin de las rondas, de los descansos y de la sesión',
+              channelDescription:
+                  'Fin de las rondas, de los descansos y de la sesión',
               importance: Importance.high,
               priority: Priority.high,
             ),
@@ -164,7 +171,8 @@ class NotificationService {
   // ---------- Cálculo de los avisos (función pura, con pruebas) ----------
 
   /// Qué avisos faltan y a qué hora, según el reloj de la sesión.
-  static List<PlannedNotification> planSessionEvents(SessionClock clock, Task task, DateTime now) {
+  static List<PlannedNotification> planSessionEvents(
+      SessionClock clock, Task task, DateTime now) {
     final position = clock.position(now);
     if (position.finished) return const [];
 
@@ -173,15 +181,18 @@ class NotificationService {
     // Si está en pausa, todo se corre lo que falte de la pausa
     var time = now.add(Duration(seconds: clock.pauseSecondsLeft(now)));
     if (clock.isPaused(now)) {
-      events.add(PlannedNotification(time, 'Tu pausa terminó', 'De vuelta al enfoque: ${task.title}'));
+      events.add(PlannedNotification(
+          time, 'Tu pausa terminó', 'De vuelta al enfoque: ${task.title}'));
     }
 
     for (var i = position.index; i < phases.length; i++) {
       final phase = phases[i];
-      time = time.add(Duration(seconds: i == position.index ? position.secondsLeft : phase.seconds));
+      time = time.add(Duration(
+          seconds: i == position.index ? position.secondsLeft : phase.seconds));
       final isLast = i == phases.length - 1;
       if (isLast) {
-        events.add(PlannedNotification(time, '¡Sesión completada!', 'Abre Floria y cuéntanos si cumpliste tu objetivo.'));
+        events.add(PlannedNotification(time, '¡Sesión completada!',
+            'Abre Floria y cuéntanos si cumpliste tu objetivo.'));
       } else if (phase.isFocus) {
         events.add(PlannedNotification(
           time,

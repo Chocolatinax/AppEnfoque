@@ -45,10 +45,15 @@ class _MainShellState extends State<MainShell> {
       // Abrir la sesión encima de Tareas, con el tiempo real transcurrido
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        final task = TaskScope.read(context)?.tasks.where((t) => t.id == resume.taskId).firstOrNull;
+        final task = TaskScope.read(context)
+            ?.tasks
+            .where((t) => t.id == resume.taskId)
+            .firstOrNull;
         if (task == null) return;
         Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => ActiveSessionScreen(task: task, restored: resume)),
+          MaterialPageRoute(
+              builder: (_) =>
+                  ActiveSessionScreen(task: task, restored: resume)),
         );
       });
     }

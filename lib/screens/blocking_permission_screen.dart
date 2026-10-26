@@ -15,10 +15,12 @@ class BlockingPermissionScreen extends StatefulWidget {
   const BlockingPermissionScreen({super.key, this.fromSession = false});
 
   @override
-  State<BlockingPermissionScreen> createState() => _BlockingPermissionScreenState();
+  State<BlockingPermissionScreen> createState() =>
+      _BlockingPermissionScreenState();
 }
 
-class _BlockingPermissionScreenState extends State<BlockingPermissionScreen> with WidgetsBindingObserver {
+class _BlockingPermissionScreenState extends State<BlockingPermissionScreen>
+    with WidgetsBindingObserver {
   final _blocker = AppBlocker.instance;
   bool? _enabled;
 
@@ -54,7 +56,8 @@ class _BlockingPermissionScreenState extends State<BlockingPermissionScreen> wit
     return Scaffold(
       appBar: AppBar(title: const Text('Permisos de bloqueo')),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(AppSpacing.screen, AppSpacing.sm, AppSpacing.screen, AppSpacing.xxl),
+        padding: const EdgeInsets.fromLTRB(AppSpacing.screen, AppSpacing.sm,
+            AppSpacing.screen, AppSpacing.xxl),
         children: [
           if (!_blocker.isSupported)
             _StatusCard(
@@ -66,14 +69,18 @@ class _BlockingPermissionScreenState extends State<BlockingPermissionScreen> wit
                   'En iPhone llegará en una próxima versión.',
             )
           else if (_enabled == null)
-            const Center(child: Padding(padding: EdgeInsets.all(AppSpacing.xl), child: CircularProgressIndicator()))
+            const Center(
+                child: Padding(
+                    padding: EdgeInsets.all(AppSpacing.xl),
+                    child: CircularProgressIndicator()))
           else if (_enabled!)
             _StatusCard(
               icon: Icons.check_circle_outline,
               color: p.primaryFixed,
               foreground: p.onPrimaryFixed,
               title: 'Bloqueo activado',
-              body: 'Durante tus sesiones, Floria te avisará si abres una de las apps que elegiste bloquear.',
+              body:
+                  'Durante tus sesiones, Floria te avisará si abres una de las apps que elegiste bloquear.',
             )
           else
             _StatusCard(
@@ -81,16 +88,23 @@ class _BlockingPermissionScreenState extends State<BlockingPermissionScreen> wit
               color: p.tertiaryFixed,
               foreground: p.onTertiaryFixed,
               title: 'Bloqueo desactivado',
-              body: 'Para bloquear apps, Android necesita que actives a Floria en Accesibilidad.',
+              body:
+                  'Para bloquear apps, Android necesita que actives a Floria en Accesibilidad.',
             ),
-
           if (_blocker.isSupported && _enabled == false) ...[
             const SizedBox(height: AppSpacing.xl),
-            Semantics(header: true, child: Text('Cómo activarlo', style: t.titleMedium)),
+            Semantics(
+                header: true,
+                child: Text('Cómo activarlo', style: t.titleMedium)),
             const SizedBox(height: AppSpacing.md),
-            const _Step(number: 1, text: 'Toca "Abrir ajustes de Accesibilidad".'),
-            const _Step(number: 2, text: 'Busca "Floria: bloqueo de distracciones" (puede estar en "Apps instaladas" o "Servicios descargados").'),
-            const _Step(number: 3, text: 'Actívalo, confirma y vuelve a Floria.'),
+            const _Step(
+                number: 1, text: 'Toca "Abrir ajustes de Accesibilidad".'),
+            const _Step(
+                number: 2,
+                text:
+                    'Busca "Floria: bloqueo de distracciones" (puede estar en "Apps instaladas" o "Servicios descargados").'),
+            const _Step(
+                number: 3, text: 'Actívalo, confirma y vuelve a Floria.'),
             const SizedBox(height: AppSpacing.lg),
             SizedBox(
               width: double.infinity,
@@ -107,7 +121,6 @@ class _BlockingPermissionScreenState extends State<BlockingPermissionScreen> wit
               style: t.bodySmall,
             ),
           ],
-
           if (widget.fromSession && _enabled == true) ...[
             const SizedBox(height: AppSpacing.xl),
             SizedBox(
@@ -119,10 +132,11 @@ class _BlockingPermissionScreenState extends State<BlockingPermissionScreen> wit
               ),
             ),
           ],
-
           if (_blocker.isSupported) ...[
             const SizedBox(height: AppSpacing.xxl),
-            Semantics(header: true, child: Text('Tu privacidad', style: t.titleMedium)),
+            Semantics(
+                header: true,
+                child: Text('Tu privacidad', style: t.titleMedium)),
             const SizedBox(height: AppSpacing.sm),
             Text(
               'Floria solo usa este permiso para saber qué app abres mientras tienes una sesión activa. '
@@ -166,7 +180,8 @@ class _StatusCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: t.titleMedium!.copyWith(color: foreground)),
+                  Text(title,
+                      style: t.titleMedium!.copyWith(color: foreground)),
                   const SizedBox(height: 2),
                   Text(body, style: t.bodyMedium!.copyWith(color: foreground)),
                 ],
@@ -197,7 +212,8 @@ class _Step extends StatelessWidget {
             CircleAvatar(
               radius: 14,
               backgroundColor: p.primaryFixed,
-              child: Text('$number', style: t.labelMedium!.copyWith(color: p.onPrimaryFixed)),
+              child: Text('$number',
+                  style: t.labelMedium!.copyWith(color: p.onPrimaryFixed)),
             ),
             const SizedBox(width: AppSpacing.md),
             Expanded(child: Text(text, style: t.bodyMedium)),

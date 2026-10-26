@@ -34,7 +34,8 @@ void main() {
       );
 
   group('Persistencia de tareas (SQLite)', () {
-    test('Guarda una tarea y la recupera completa al volver a cargar', () async {
+    test('Guarda una tarea y la recupera completa al volver a cargar',
+        () async {
       await repo.add(buildTask('1', 'Alta', minutes: 45));
 
       // Un repositorio nuevo simula cerrar y volver a abrir la app
@@ -53,7 +54,8 @@ void main() {
       expect(saved.isDone, isFalse);
     });
 
-    test('Ordena las pendientes por prioridad y sugiere la más importante', () async {
+    test('Ordena las pendientes por prioridad y sugiere la más importante',
+        () async {
       await repo.add(buildTask('baja', 'Baja'));
       await repo.add(buildTask('alta', 'Alta'));
       await repo.add(buildTask('media', 'Media'));
@@ -63,10 +65,20 @@ void main() {
     });
 
     test('Con la misma prioridad, las más nuevas van arriba', () async {
-      final older = Task(id: 'vieja', title: 'Vieja', goal: 'Objetivo de la tarea vieja', durationMinutes: 25,
-          priority: 'Media', createdAt: DateTime(2026, 10, 20));
-      final newer = Task(id: 'nueva', title: 'Nueva', goal: 'Objetivo de la tarea nueva', durationMinutes: 25,
-          priority: 'Media', createdAt: DateTime(2026, 10, 25));
+      final older = Task(
+          id: 'vieja',
+          title: 'Vieja',
+          goal: 'Objetivo de la tarea vieja',
+          durationMinutes: 25,
+          priority: 'Media',
+          createdAt: DateTime(2026, 10, 20));
+      final newer = Task(
+          id: 'nueva',
+          title: 'Nueva',
+          goal: 'Objetivo de la tarea nueva',
+          durationMinutes: 25,
+          priority: 'Media',
+          createdAt: DateTime(2026, 10, 25));
       await repo.add(older);
       await repo.add(newer);
       expect(repo.tasks.map((t) => t.id), ['nueva', 'vieja']);
@@ -109,7 +121,8 @@ void main() {
       expect(saved.createdAt, original.createdAt);
     });
 
-    test('Eliminar quita la tarea y se puede deshacer volviéndola a agregar', () async {
+    test('Eliminar quita la tarea y se puede deshacer volviéndola a agregar',
+        () async {
       final task = buildTask('1', 'Media');
       await repo.add(task);
 

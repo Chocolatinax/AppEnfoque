@@ -25,7 +25,8 @@ class BlockedAppReminderScreen extends StatefulWidget {
   });
 
   @override
-  State<BlockedAppReminderScreen> createState() => _BlockedAppReminderScreenState();
+  State<BlockedAppReminderScreen> createState() =>
+      _BlockedAppReminderScreenState();
 }
 
 class _BlockedAppReminderScreenState extends State<BlockedAppReminderScreen> {
@@ -49,7 +50,8 @@ class _BlockedAppReminderScreenState extends State<BlockedAppReminderScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final event = widget.event.value;
       final ms = DateTime.now().difference(event.detectedAt).inMilliseconds;
-      debugPrint('[R1] Recordatorio de ${widget.appNameFor(event.packageName)} mostrado en $ms ms (meta: < 2000 ms)');
+      debugPrint(
+          '[R1] Recordatorio de ${widget.appNameFor(event.packageName)} mostrado en $ms ms (meta: < 2000 ms)');
       if (mounted && kDebugMode) setState(() => _latencyMs = ms);
     });
   }
@@ -69,8 +71,10 @@ class _BlockedAppReminderScreenState extends State<BlockedAppReminderScreen> {
                 Container(
                   width: 96,
                   height: 96,
-                  decoration: BoxDecoration(color: p.tertiaryFixed, shape: BoxShape.circle),
-                  child: Icon(Icons.block_rounded, size: 48, color: p.onTertiaryFixed),
+                  decoration: BoxDecoration(
+                      color: p.tertiaryFixed, shape: BoxShape.circle),
+                  child: Icon(Icons.block_rounded,
+                      size: 48, color: p.onTertiaryFixed),
                 ),
                 const SizedBox(height: AppSpacing.xl),
                 ValueListenableBuilder<BlockedAppEvent>(
@@ -103,7 +107,8 @@ class _BlockedAppReminderScreenState extends State<BlockedAppReminderScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Tu objetivo', style: t.labelMedium!.copyWith(color: p.primary)),
+                      Text('Tu objetivo',
+                          style: t.labelMedium!.copyWith(color: p.primary)),
                       const SizedBox(height: AppSpacing.xs),
                       Text(widget.goal, style: t.titleMedium),
                     ],
@@ -121,7 +126,8 @@ class _BlockedAppReminderScreenState extends State<BlockedAppReminderScreen> {
                 if (_latencyMs != null) ...[
                   const SizedBox(height: AppSpacing.lg),
                   // Solo en modo debug, como evidencia para las pruebas de R1
-                  Text('Modo debug · mostrado en $_latencyMs ms', style: t.bodySmall),
+                  Text('Modo debug · mostrado en $_latencyMs ms',
+                      style: t.bodySmall),
                 ],
               ],
             ),

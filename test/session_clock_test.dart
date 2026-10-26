@@ -9,10 +9,14 @@ import 'package:enfoque_app/models/task_model.dart';
 /// sesión, al reabrirla el temporizador muestra el tiempo real transcurrido).
 void main() {
   final start = DateTime(2026, 10, 25, 10, 0, 0);
-  DateTime at(int minutes, [int seconds = 0]) => start.add(Duration(minutes: minutes, seconds: seconds));
+  DateTime at(int minutes, [int seconds = 0]) =>
+      start.add(Duration(minutes: minutes, seconds: seconds));
 
-  Task freeTask(int minutes) =>
-      Task(id: 'libre', title: 'Leer', goal: 'Leer el capítulo 3 completo', durationMinutes: minutes);
+  Task freeTask(int minutes) => Task(
+      id: 'libre',
+      title: 'Leer',
+      goal: 'Leer el capítulo 3 completo',
+      durationMinutes: minutes);
 
   Task pomodoroTask(int rounds) => Task(
         id: 'pomo',
@@ -23,7 +27,8 @@ void main() {
         pomodoroRounds: rounds,
       );
 
-  SessionClock clockFor(Task task) => SessionClock(phases: SessionClock.phasesFor(task), startedAt: start);
+  SessionClock clockFor(Task task) =>
+      SessionClock(phases: SessionClock.phasesFor(task), startedAt: start);
 
   group('Tiempo libre', () {
     test('Calcula el tiempo restante a partir de la hora real', () {
@@ -32,7 +37,9 @@ void main() {
       expect(clock.focusSeconds(at(10)), 10 * 60);
     });
 
-    test('R5: tras 30 min con la app cerrada, muestra el tiempo real (no reiniciado)', () {
+    test(
+        'R5: tras 30 min con la app cerrada, muestra el tiempo real (no reiniciado)',
+        () {
       final clock = clockFor(freeTask(45));
       // La app se cerró al minuto 5 y se reabrió al minuto 35
       final restored = SessionClock(
@@ -44,11 +51,14 @@ void main() {
       expect(restored.position(at(35)).secondsLeft, 10 * 60);
     });
 
-    test('Si el tiempo terminó con la app cerrada, la sesión aparece como terminada', () {
+    test(
+        'Si el tiempo terminó con la app cerrada, la sesión aparece como terminada',
+        () {
       final clock = clockFor(freeTask(25));
       final pos = clock.position(at(60));
       expect(pos.finished, isTrue);
-      expect(clock.focusSeconds(at(60)), 25 * 60); // no cuenta más del tiempo planeado
+      expect(clock.focusSeconds(at(60)),
+          25 * 60); // no cuenta más del tiempo planeado
     });
   });
 
@@ -68,7 +78,8 @@ void main() {
       expect(clock.position(at(12)).secondsLeft, (13 * 60) + 30);
     });
 
-    test('La pausa termina sola a los 2 minutos, aunque la app esté cerrada', () {
+    test('La pausa termina sola a los 2 minutos, aunque la app esté cerrada',
+        () {
       final clock = clockFor(freeTask(25));
       clock.startPause(at(10));
       expect(clock.isPaused(at(20)), isFalse);
@@ -82,7 +93,8 @@ void main() {
 
   group('Pomodoro', () {
     test('Sigue las rondas y descansos con la hora real', () {
-      final clock = clockFor(pomodoroTask(2)); // 25 enfoque, 5 desc., 25 enfoque, 5 desc.
+      final clock =
+          clockFor(pomodoroTask(2)); // 25 enfoque, 5 desc., 25 enfoque, 5 desc.
       expect(clock.phases.length, 4);
 
       final inBreak = clock.position(at(27));
@@ -113,7 +125,8 @@ void main() {
     sqfliteFfiInit();
 
     test('Se guarda, se recupera igual y se borra al terminar', () async {
-      final db = await AppDatabase.open(factory: databaseFactoryFfi, path: inMemoryDatabasePath);
+      final db = await AppDatabase.open(
+          factory: databaseFactoryFfi, path: inMemoryDatabasePath);
       final repo = SessionRepository(db);
       await repo.load();
       expect(await repo.loadActive(), isNull);
@@ -122,7 +135,8 @@ void main() {
         ..pausedSeconds = 30
         ..skippedSeconds = 0
         ..pauseStartedAt = at(12);
-      await repo.saveActive(ActiveSessionRecord.fromClock('s1', 'libre', clock));
+      await repo
+          .saveActive(ActiveSessionRecord.fromClock('s1', 'libre', clock));
 
       final loaded = await repo.loadActive();
       expect(loaded, isNotNull);
@@ -133,7 +147,8 @@ void main() {
       expect(loaded.pauseStartedAt, at(12));
 
       // Guardar de nuevo reemplaza (solo hay una sesión en curso)
-      await repo.saveActive(ActiveSessionRecord.fromClock('s1', 'libre', clock..pausedSeconds = 90));
+      await repo.saveActive(ActiveSessionRecord.fromClock(
+          's1', 'libre', clock..pausedSeconds = 90));
       expect((await repo.loadActive())!.pausedSeconds, 90);
 
       await repo.clearActive();

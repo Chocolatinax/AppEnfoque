@@ -33,7 +33,8 @@ class FormValidators {
     }
     final trimmed = value.trim();
     // Mínimo 4 palabras para que el objetivo sea concreto ("Leer el capítulo 3")...
-    final words = trimmed.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).length;
+    final words =
+        trimmed.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).length;
     if (words < minGoalWords) {
       return 'Escribe al menos $minGoalWords palabras';
     }

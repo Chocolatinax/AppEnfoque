@@ -14,7 +14,9 @@ Future<bool> confirmDeleteTask(BuildContext context, Task task) async {
         '"${task.title}" se borrará de tu lista. Las sesiones que ya hiciste se quedan en tu historial.',
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+        TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar')),
         TextButton(
           onPressed: () => Navigator.pop(ctx, true),
           style: TextButton.styleFrom(foregroundColor: p.error),
@@ -41,7 +43,8 @@ Future<void> deleteTaskWithUndo(BuildContext context, Task task) async {
     SnackBar(
       content: Text(
         'Tarea eliminada',
-        style: TextStyle(fontWeight: FontWeight.w600, color: p.inverseOnSurface),
+        style:
+            TextStyle(fontWeight: FontWeight.w600, color: p.inverseOnSurface),
       ),
       action: SnackBarAction(
         label: 'Deshacer',

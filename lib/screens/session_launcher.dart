@@ -13,7 +13,8 @@ enum _PermissionChoice { activate, withoutBlocking }
 ///
 /// Si la tarea bloquea apps y el permiso de Android no está activo, primero
 /// ofrece activarlo (o iniciar sin bloqueo). Devuelve `true` si la sesión empezó.
-Future<bool> launchFocusSession(BuildContext context, Task task, {bool replace = false}) async {
+Future<bool> launchFocusSession(BuildContext context, Task task,
+    {bool replace = false}) async {
   final blocker = AppBlocker.instance;
   final needsBlocking = task.blockDistractions && task.blockedApps.isNotEmpty;
 
@@ -31,14 +32,16 @@ Future<bool> launchFocusSession(BuildContext context, Task task, {bool replace =
 
     if (choice == _PermissionChoice.activate) {
       final ready = await Navigator.of(context).push<bool>(
-        MaterialPageRoute(builder: (_) => const BlockingPermissionScreen(fromSession: true)),
+        MaterialPageRoute(
+            builder: (_) => const BlockingPermissionScreen(fromSession: true)),
       );
       if (ready != true || !context.mounted) return false;
     }
   }
 
   if (!context.mounted) return false;
-  final route = MaterialPageRoute<void>(builder: (_) => ActiveSessionScreen(task: task));
+  final route =
+      MaterialPageRoute<void>(builder: (_) => ActiveSessionScreen(task: task));
   if (replace) {
     Navigator.of(context).pushReplacement(route);
   } else {
@@ -57,14 +60,16 @@ class _PermissionSheet extends StatelessWidget {
 
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(AppSpacing.xl, 0, AppSpacing.xl, AppSpacing.xl),
+        padding: const EdgeInsets.fromLTRB(
+            AppSpacing.xl, 0, AppSpacing.xl, AppSpacing.xl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Icon(Icons.shield_outlined, size: 40, color: p.primary),
             const SizedBox(height: AppSpacing.md),
-            Text('Activa el bloqueo de apps', textAlign: TextAlign.center, style: t.titleLarge),
+            Text('Activa el bloqueo de apps',
+                textAlign: TextAlign.center, style: t.titleLarge),
             const SizedBox(height: AppSpacing.sm),
             Text(
               'Para bloquear tus distracciones durante la sesión, Android necesita un permiso. '
@@ -74,12 +79,14 @@ class _PermissionSheet extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.xl),
             FilledButton(
-              onPressed: () => Navigator.pop(context, _PermissionChoice.activate),
+              onPressed: () =>
+                  Navigator.pop(context, _PermissionChoice.activate),
               child: const Text('Activar bloqueo'),
             ),
             const SizedBox(height: AppSpacing.sm),
             TextButton(
-              onPressed: () => Navigator.pop(context, _PermissionChoice.withoutBlocking),
+              onPressed: () =>
+                  Navigator.pop(context, _PermissionChoice.withoutBlocking),
               child: const Text('Iniciar sin bloqueo'),
             ),
           ],

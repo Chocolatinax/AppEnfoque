@@ -25,7 +25,8 @@ class AppDatabase {
   /// Abre (o crea) la base de datos.
   ///
   /// [factory] y [path] solo se usan en las pruebas para abrir una base en memoria.
-  static Future<AppDatabase> open({DatabaseFactory? factory, String? path}) async {
+  static Future<AppDatabase> open(
+      {DatabaseFactory? factory, String? path}) async {
     final dbFactory = factory ?? databaseFactory;
     final dbPath = path ?? p.join(await dbFactory.getDatabasesPath(), fileName);
 
@@ -75,7 +76,8 @@ class AppDatabase {
       )
     ''');
 
-    await db.execute('CREATE INDEX idx_sessions_started_at ON sessions(started_at)');
+    await db.execute(
+        'CREATE INDEX idx_sessions_started_at ON sessions(started_at)');
 
     // Sesión en curso (una sola fila): permite retomarla al reabrir la app (R5)
     await db.execute('''
@@ -92,14 +94,19 @@ class AppDatabase {
   }
 
   /// Actualiza una base existente sin perder datos.
-  static Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+  static Future<void> _onUpgrade(
+      Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
-      await db.execute("ALTER TABLE tasks ADD COLUMN timer_mode TEXT NOT NULL DEFAULT 'libre'");
-      await db.execute('ALTER TABLE tasks ADD COLUMN pomodoro_rounds INTEGER NOT NULL DEFAULT 0');
-      await db.execute('ALTER TABLE sessions ADD COLUMN focus_seconds INTEGER NOT NULL DEFAULT 0');
+      await db.execute(
+          "ALTER TABLE tasks ADD COLUMN timer_mode TEXT NOT NULL DEFAULT 'libre'");
+      await db.execute(
+          'ALTER TABLE tasks ADD COLUMN pomodoro_rounds INTEGER NOT NULL DEFAULT 0');
+      await db.execute(
+          'ALTER TABLE sessions ADD COLUMN focus_seconds INTEGER NOT NULL DEFAULT 0');
     }
     if (oldVersion < 3) {
-      await db.execute("ALTER TABLE tasks ADD COLUMN blocked_packages TEXT NOT NULL DEFAULT '[]'");
+      await db.execute(
+          "ALTER TABLE tasks ADD COLUMN blocked_packages TEXT NOT NULL DEFAULT '[]'");
     }
     if (oldVersion < 4) {
       await db.execute('''

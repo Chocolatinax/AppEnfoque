@@ -63,7 +63,8 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
       _priority = task.priority;
       _blockDistractions = task.blockDistractions;
       if (task.isPomodoro) {
-        _rounds = task.pomodoroRounds.clamp(Pomodoro.minRounds, Pomodoro.maxRounds);
+        _rounds =
+            task.pomodoroRounds.clamp(Pomodoro.minRounds, Pomodoro.maxRounds);
       } else {
         _durationController.text = '${task.durationMinutes}';
       }
@@ -82,11 +83,15 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
       final saved = task.blockedPackages.isNotEmpty
           ? task.blockedPackages.toSet()
           : BlockableApps.packagesFor(task.blockedApps).toSet();
-      initial = apps.where((a) => saved.contains(a.packageName)).map((a) => a.packageName);
+      initial = apps
+          .where((a) => saved.contains(a.packageName))
+          .map((a) => a.packageName);
     } else if (AppBlocker.instance.isSupported) {
       initial = apps.where((a) => a.isRecommended).map((a) => a.packageName);
     } else {
-      initial = apps.where((a) => BlockableApps.defaultSelection.contains(a.name)).map((a) => a.packageName);
+      initial = apps
+          .where((a) => BlockableApps.defaultSelection.contains(a.name))
+          .map((a) => a.packageName);
     }
 
     setState(() {
@@ -109,7 +114,8 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
   Future<void> _openAppPicker() async {
     final result = await Navigator.of(context).push<Set<String>>(
       MaterialPageRoute(
-        builder: (_) => AppPickerScreen(apps: _availableApps, initialSelection: _selectedPackages),
+        builder: (_) => AppPickerScreen(
+            apps: _availableApps, initialSelection: _selectedPackages),
       ),
     );
     if (result == null || !mounted) return;
@@ -122,8 +128,9 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
   }
 
   /// Apps elegidas, en el orden de la lista.
-  List<InstalledApp> get _chosenApps =>
-      _availableApps.where((a) => _selectedPackages.contains(a.packageName)).toList();
+  List<InstalledApp> get _chosenApps => _availableApps
+      .where((a) => _selectedPackages.contains(a.packageName))
+      .toList();
 
   @override
   void dispose() {
@@ -152,11 +159,31 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
     final p = context.palette;
     final t = Theme.of(context).textTheme;
     const steps = [
-      (Icons.check_circle_outline, 'Elige una tarea', 'Una sola actividad en la que te vas a enfocar.'),
-      (Icons.timer_outlined, 'Trabaja 25 minutos', 'Concéntrate solo en esa tarea. Floria bloquea tus distracciones.'),
-      (Icons.local_cafe_outlined, 'Descansa 5 minutos', 'Haz una pausa corta: levántate, estírate o toma agua.'),
-      (Icons.repeat_rounded, 'Repite el ciclo', 'Cada bloque de 25 minutos con su descanso es una ronda.'),
-      (Icons.self_improvement_outlined, 'Toma un descanso largo', 'Después de la 4.ª ronda descansa 25 minutos para recargar energía.'),
+      (
+        Icons.check_circle_outline,
+        'Elige una tarea',
+        'Una sola actividad en la que te vas a enfocar.'
+      ),
+      (
+        Icons.timer_outlined,
+        'Trabaja 25 minutos',
+        'Concéntrate solo en esa tarea. Floria bloquea tus distracciones.'
+      ),
+      (
+        Icons.local_cafe_outlined,
+        'Descansa 5 minutos',
+        'Haz una pausa corta: levántate, estírate o toma agua.'
+      ),
+      (
+        Icons.repeat_rounded,
+        'Repite el ciclo',
+        'Cada bloque de 25 minutos con su descanso es una ronda.'
+      ),
+      (
+        Icons.self_improvement_outlined,
+        'Toma un descanso largo',
+        'Después de la 4.ª ronda descansa 25 minutos para recargar energía.'
+      ),
     ];
     showModalBottomSheet(
       context: context,
@@ -164,7 +191,8 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
       isScrollControlled: true,
       builder: (ctx) => SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(AppSpacing.xl, 0, AppSpacing.xl, AppSpacing.xl),
+          padding: const EdgeInsets.fromLTRB(
+              AppSpacing.xl, 0, AppSpacing.xl, AppSpacing.xl),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -180,7 +208,9 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                         CircleAvatar(
                           radius: 16,
                           backgroundColor: p.primaryFixed,
-                          child: Text('${i + 1}', style: t.labelMedium!.copyWith(color: p.onPrimaryFixed)),
+                          child: Text('${i + 1}',
+                              style: t.labelMedium!
+                                  .copyWith(color: p.onPrimaryFixed)),
                         ),
                         const SizedBox(width: AppSpacing.md),
                         Expanded(
@@ -188,7 +218,9 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(step.$2, style: t.titleMedium),
-                              Text(step.$3, style: t.bodyMedium!.copyWith(color: p.onSurfaceVariant)),
+                              Text(step.$3,
+                                  style: t.bodyMedium!
+                                      .copyWith(color: p.onSurfaceVariant)),
                             ],
                           ),
                         ),
@@ -198,7 +230,9 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                 ),
               SizedBox(
                 width: double.infinity,
-                child: FilledButton(onPressed: () => Navigator.pop(ctx), child: const Text('Entendido')),
+                child: FilledButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: const Text('Entendido')),
               ),
             ],
           ),
@@ -236,13 +270,17 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
       isDone: original?.isDone ?? false,
       title: _titleController.text.trim(),
       goal: _goalController.text.trim(),
-      durationMinutes: _isPomodoro ? _pomodoroFocusMinutes : int.parse(_durationController.text.trim()),
+      durationMinutes: _isPomodoro
+          ? _pomodoroFocusMinutes
+          : int.parse(_durationController.text.trim()),
       priority: _priority,
       timerMode: _timerMode,
       pomodoroRounds: _isPomodoro ? _rounds : 0,
       blockDistractions: _blockDistractions,
       blockedApps: _blockDistractions ? _selectedApps : const [],
-      blockedPackages: _blockDistractions ? _chosenApps.map((a) => a.packageName).toList() : const [],
+      blockedPackages: _blockDistractions
+          ? _chosenApps.map((a) => a.packageName).toList()
+          : const [],
     );
 
     // 3. Guardar en SQLite
@@ -263,7 +301,8 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
         if (Navigator.of(context).canPop()) Navigator.of(context).pop();
       }
     } else {
-      showAppSnackBar(context, _isEditing ? 'Cambios guardados' : 'Tarea guardada en tu lista');
+      showAppSnackBar(context,
+          _isEditing ? 'Cambios guardados' : 'Tarea guardada en tu lista');
       if (Navigator.of(context).canPop()) Navigator.of(context).pop();
     }
   }
@@ -279,108 +318,118 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
         key: _formKey,
         autovalidateMode: AutovalidateMode.onUserInteraction,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(AppSpacing.screen, AppSpacing.sm, AppSpacing.screen, AppSpacing.xxl),
+          padding: const EdgeInsets.fromLTRB(AppSpacing.screen, AppSpacing.sm,
+              AppSpacing.screen, AppSpacing.xxl),
           child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // ---------- 1. ¿Qué vas a hacer? ----------
-            const _SectionTitle('¿Qué vas a hacer?'),
-            TextFormField(
-              controller: _titleController,
-              maxLength: 50,
-              textCapitalization: TextCapitalization.sentences,
-              textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(
-                labelText: 'Título de la tarea',
-                hintText: 'Ej. Estudiar para el parcial de Cálculo',
-              ),
-              validator: FormValidators.validateTitle,
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            TextFormField(
-              controller: _goalController,
-              maxLength: 300,
-              minLines: 2,
-              maxLines: 4,
-              textCapitalization: TextCapitalization.sentences,
-              decoration: const InputDecoration(
-                labelText: '¿Qué quieres lograr exactamente?',
-                hintText: 'Ej. Resolver 5 ejercicios de integrales',
-                alignLabelWithHint: true,
-              ),
-              validator: FormValidators.validateGoal,
-            ),
-
-            // ---------- 2. Tiempo ----------
-            const _SectionTitle('¿Cómo quieres medir el tiempo?'),
-            SegmentedButton<String>(
-              segments: const [
-                ButtonSegment(value: TimerMode.free, label: Text('Tiempo libre'), icon: Icon(Icons.timer_outlined)),
-                ButtonSegment(value: TimerMode.pomodoro, label: Text('Pomodoro'), icon: Icon(Icons.av_timer)),
-              ],
-              selected: {_timerMode},
-              onSelectionChanged: (s) => setState(() => _timerMode = s.first),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            if (_isPomodoro) _buildPomodoroOptions(p, t) else _buildFreeTimeOptions(p),
-
-            // ---------- 3. Prioridad ----------
-            const _SectionTitle('Prioridad'),
-            SegmentedButton<String>(
-              segments: const [
-                ButtonSegment(value: 'Baja', label: Text('Baja')),
-                ButtonSegment(value: 'Media', label: Text('Media')),
-                ButtonSegment(value: 'Alta', label: Text('Alta')),
-              ],
-              selected: {_priority},
-              showSelectedIcon: false,
-              onSelectionChanged: (s) => setState(() => _priority = s.first),
-            ),
-
-            // ---------- 4. Bloqueo ----------
-            const _SectionTitle('Distracciones'),
-            _buildBlockingCard(p, t),
-
-            // ---------- Acciones ----------
-            const SizedBox(height: AppSpacing.xxl),
-            if (_isEditing) ...[
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: () => _submit(startNow: false),
-                  icon: const Icon(Icons.check_rounded),
-                  label: const Text('Guardar cambios'),
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // ---------- 1. ¿Qué vas a hacer? ----------
+              const _SectionTitle('¿Qué vas a hacer?'),
+              TextFormField(
+                controller: _titleController,
+                maxLength: 50,
+                textCapitalization: TextCapitalization.sentences,
+                textInputAction: TextInputAction.next,
+                decoration: const InputDecoration(
+                  labelText: 'Título de la tarea',
+                  hintText: 'Ej. Estudiar para el parcial de Cálculo',
                 ),
+                validator: FormValidators.validateTitle,
               ),
               const SizedBox(height: AppSpacing.sm),
-              SizedBox(
-                width: double.infinity,
-                child: TextButton.icon(
-                  onPressed: _delete,
-                  style: TextButton.styleFrom(foregroundColor: p.error),
-                  icon: const Icon(Icons.delete_outline),
-                  label: const Text('Eliminar tarea'),
+              TextFormField(
+                controller: _goalController,
+                maxLength: 300,
+                minLines: 2,
+                maxLines: 4,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: const InputDecoration(
+                  labelText: '¿Qué quieres lograr exactamente?',
+                  hintText: 'Ej. Resolver 5 ejercicios de integrales',
+                  alignLabelWithHint: true,
                 ),
+                validator: FormValidators.validateGoal,
               ),
-            ] else ...[
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: () => _submit(startNow: true),
-                  icon: const Icon(Icons.play_arrow_rounded),
-                  label: const Text('Guardar e iniciar enfoque'),
+
+              // ---------- 2. Tiempo ----------
+              const _SectionTitle('¿Cómo quieres medir el tiempo?'),
+              SegmentedButton<String>(
+                segments: const [
+                  ButtonSegment(
+                      value: TimerMode.free,
+                      label: Text('Tiempo libre'),
+                      icon: Icon(Icons.timer_outlined)),
+                  ButtonSegment(
+                      value: TimerMode.pomodoro,
+                      label: Text('Pomodoro'),
+                      icon: Icon(Icons.av_timer)),
+                ],
+                selected: {_timerMode},
+                onSelectionChanged: (s) => setState(() => _timerMode = s.first),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              if (_isPomodoro)
+                _buildPomodoroOptions(p, t)
+              else
+                _buildFreeTimeOptions(p),
+
+              // ---------- 3. Prioridad ----------
+              const _SectionTitle('Prioridad'),
+              SegmentedButton<String>(
+                segments: const [
+                  ButtonSegment(value: 'Baja', label: Text('Baja')),
+                  ButtonSegment(value: 'Media', label: Text('Media')),
+                  ButtonSegment(value: 'Alta', label: Text('Alta')),
+                ],
+                selected: {_priority},
+                showSelectedIcon: false,
+                onSelectionChanged: (s) => setState(() => _priority = s.first),
+              ),
+
+              // ---------- 4. Bloqueo ----------
+              const _SectionTitle('Distracciones'),
+              _buildBlockingCard(p, t),
+
+              // ---------- Acciones ----------
+              const SizedBox(height: AppSpacing.xxl),
+              if (_isEditing) ...[
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: () => _submit(startNow: false),
+                    icon: const Icon(Icons.check_rounded),
+                    label: const Text('Guardar cambios'),
+                  ),
                 ),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              SizedBox(
-                width: double.infinity,
-                child: TextButton(
-                  onPressed: () => _submit(startNow: false),
-                  child: const Text('Solo guardar'),
+                const SizedBox(height: AppSpacing.sm),
+                SizedBox(
+                  width: double.infinity,
+                  child: TextButton.icon(
+                    onPressed: _delete,
+                    style: TextButton.styleFrom(foregroundColor: p.error),
+                    icon: const Icon(Icons.delete_outline),
+                    label: const Text('Eliminar tarea'),
+                  ),
                 ),
-              ),
+              ] else ...[
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: () => _submit(startNow: true),
+                    icon: const Icon(Icons.play_arrow_rounded),
+                    label: const Text('Guardar e iniciar enfoque'),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                SizedBox(
+                  width: double.infinity,
+                  child: TextButton(
+                    onPressed: () => _submit(startNow: false),
+                    child: const Text('Solo guardar'),
+                  ),
+                ),
+              ],
             ],
-          ],
           ),
         ),
       ),
@@ -406,7 +455,8 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                   fontWeight: FontWeight.w600,
                   color: current == m ? p.onPrimary : p.onSurface,
                 ),
-                onSelected: (_) => setState(() => _durationController.text = '$m'),
+                onSelected: (_) =>
+                    setState(() => _durationController.text = '$m'),
               ),
           ],
         ),
@@ -452,7 +502,9 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
               const Spacer(),
               IconButton.outlined(
                 tooltip: 'Quitar una ronda',
-                onPressed: _rounds > Pomodoro.minRounds ? () => setState(() => _rounds--) : null,
+                onPressed: _rounds > Pomodoro.minRounds
+                    ? () => setState(() => _rounds--)
+                    : null,
                 icon: const Icon(Icons.remove),
               ),
               Semantics(
@@ -460,12 +512,15 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                 excludeSemantics: true,
                 child: SizedBox(
                   width: 44,
-                  child: Text('$_rounds', textAlign: TextAlign.center, style: t.headlineSmall),
+                  child: Text('$_rounds',
+                      textAlign: TextAlign.center, style: t.headlineSmall),
                 ),
               ),
               IconButton.outlined(
                 tooltip: 'Agregar una ronda',
-                onPressed: _rounds < Pomodoro.maxRounds ? () => setState(() => _rounds++) : null,
+                onPressed: _rounds < Pomodoro.maxRounds
+                    ? () => setState(() => _rounds++)
+                    : null,
                 icon: const Icon(Icons.add),
               ),
             ],
@@ -490,7 +545,8 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: _appsError != null ? p.error : p.outlineVariant),
+        border:
+            Border.all(color: _appsError != null ? p.error : p.outlineVariant),
       ),
       child: Column(
         children: [
@@ -500,8 +556,10 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
               _blockDistractions = v;
               if (!v) _appsError = null;
             }),
-            title: const Text('Bloquear apps durante la sesión', style: TextStyle(fontWeight: FontWeight.w600)),
-            subtitle: const Text('Si intentas abrirlas, Floria te lo recordará.'),
+            title: const Text('Bloquear apps durante la sesión',
+                style: TextStyle(fontWeight: FontWeight.w600)),
+            subtitle:
+                const Text('Si intentas abrirlas, Floria te lo recordará.'),
           ),
           if (_blockDistractions) ...[
             const Divider(),
@@ -519,18 +577,22 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
               ),
               subtitle: _selectedApps.isEmpty
                   ? const Text('Toca para elegir qué apps bloquear')
-                  : Text(_selectedApps.join(', '), maxLines: 2, overflow: TextOverflow.ellipsis),
+                  : Text(_selectedApps.join(', '),
+                      maxLines: 2, overflow: TextOverflow.ellipsis),
               trailing: const Icon(Icons.chevron_right),
             ),
           ],
           if (_appsError != null)
             Padding(
-              padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.md),
+              padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.md),
               child: Row(
                 children: [
                   Icon(Icons.error_outline, size: 18, color: p.error),
                   const SizedBox(width: AppSpacing.sm),
-                  Expanded(child: Text(_appsError!, style: t.bodyMedium!.copyWith(color: p.error))),
+                  Expanded(
+                      child: Text(_appsError!,
+                          style: t.bodyMedium!.copyWith(color: p.error))),
                 ],
               ),
             ),

@@ -15,9 +15,21 @@ class PriorityChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.palette;
     final (bg, fg, icon) = switch (priority) {
-      'Alta' => (p.tertiaryFixed, p.onTertiaryFixed, Icons.keyboard_double_arrow_up),
-      'Media' => (p.secondaryFixed, p.onSecondaryFixedVariant, Icons.drag_handle),
-      _ => (p.surfaceContainerHigh, p.onSurfaceVariant, Icons.keyboard_arrow_down),
+      'Alta' => (
+          p.tertiaryFixed,
+          p.onTertiaryFixed,
+          Icons.keyboard_double_arrow_up
+        ),
+      'Media' => (
+          p.secondaryFixed,
+          p.onSecondaryFixedVariant,
+          Icons.drag_handle
+        ),
+      _ => (
+          p.surfaceContainerHigh,
+          p.onSurfaceVariant,
+          Icons.keyboard_arrow_down
+        ),
     };
 
     return Semantics(
@@ -36,7 +48,8 @@ class PriorityChip extends StatelessWidget {
             const SizedBox(width: 3),
             Text(
               priority,
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: fg),
+              style: TextStyle(
+                  fontSize: 12, fontWeight: FontWeight.w600, color: fg),
             ),
           ],
         ),

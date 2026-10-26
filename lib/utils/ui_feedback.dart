@@ -25,7 +25,8 @@ void showAppSnackBar(
           Expanded(
             child: Text(
               message,
-              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: foreground),
+              style: TextStyle(
+                  fontWeight: FontWeight.w600, fontSize: 14, color: foreground),
             ),
           ),
         ],

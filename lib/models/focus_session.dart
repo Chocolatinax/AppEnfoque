@@ -66,7 +66,8 @@ class FocusSession {
         plannedMinutes: row['planned_minutes'] as int,
         focusSeconds: row['focus_seconds'] as int? ?? 0,
         startedAt: DateTime.parse(row['started_at'] as String),
-        endedAt: DateTime.parse((row['ended_at'] ?? row['started_at']) as String),
+        endedAt:
+            DateTime.parse((row['ended_at'] ?? row['started_at']) as String),
         status: row['status'] as String,
         goalResult: row['goal_result'] as String?,
       );

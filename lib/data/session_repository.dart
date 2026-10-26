@@ -18,7 +18,8 @@ class SessionRepository extends ChangeNotifier {
   List<FocusSession> get sessions => List.unmodifiable(_sessions);
 
   Future<void> load() async {
-    final rows = await _database.db.query('sessions', orderBy: 'started_at DESC');
+    final rows =
+        await _database.db.query('sessions', orderBy: 'started_at DESC');
     _sessions = rows.map(FocusSession.fromDbMap).toList();
     notifyListeners();
   }
@@ -63,7 +64,8 @@ class SessionRepository extends ChangeNotifier {
 
   /// Guarda (o actualiza) la sesión en curso.
   Future<void> saveActive(ActiveSessionRecord record) =>
-      _database.db.insert('active_session', record.toDbMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+      _database.db.insert('active_session', record.toDbMap(),
+          conflictAlgorithm: ConflictAlgorithm.replace);
 
   /// Sesión que quedó en curso cuando se cerró la app (o null).
   Future<ActiveSessionRecord?> loadActive() async {
@@ -92,8 +94,10 @@ class SessionScope extends InheritedNotifier<SessionRepository> {
 
   /// Para usar en `build`: la pantalla se redibuja cuando cambian las sesiones.
   static SessionRepository of(BuildContext context) {
-    final repo = context.dependOnInheritedWidgetOfExactType<SessionScope>()?.notifier;
-    assert(repo != null, 'No hay un SessionScope arriba en el árbol de widgets.');
+    final repo =
+        context.dependOnInheritedWidgetOfExactType<SessionScope>()?.notifier;
+    assert(
+        repo != null, 'No hay un SessionScope arriba en el árbol de widgets.');
     return repo!;
   }
 

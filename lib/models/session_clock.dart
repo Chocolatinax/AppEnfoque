@@ -7,7 +7,8 @@ class SessionPhase {
   final int minutes;
   final int round;
 
-  const SessionPhase({required this.isFocus, required this.minutes, required this.round});
+  const SessionPhase(
+      {required this.isFocus, required this.minutes, required this.round});
 
   int get seconds => minutes * 60;
 }
@@ -55,34 +56,44 @@ class SessionClock {
   /// Fases de una tarea: un bloque (tiempo libre) o rondas con descansos (Pomodoro).
   static List<SessionPhase> phasesFor(Task task) {
     if (!task.isPomodoro) {
-      return [SessionPhase(isFocus: true, minutes: task.durationMinutes, round: 1)];
+      return [
+        SessionPhase(isFocus: true, minutes: task.durationMinutes, round: 1)
+      ];
     }
     return [
       for (var r = 1; r <= task.pomodoroRounds; r++) ...[
         SessionPhase(isFocus: true, minutes: Pomodoro.focusMinutes, round: r),
         // Toda ronda termina con su descanso (también la última)
-        SessionPhase(isFocus: false, minutes: Pomodoro.breakAfterRound(r), round: r),
+        SessionPhase(
+            isFocus: false, minutes: Pomodoro.breakAfterRound(r), round: r),
       ],
     ];
   }
 
   int get totalSeconds => phases.fold(0, (sum, p) => sum + p.seconds);
 
-  int _secondsSince(DateTime from, DateTime now) => math.max(0, now.difference(from).inSeconds);
+  int _secondsSince(DateTime from, DateTime now) =>
+      math.max(0, now.difference(from).inSeconds);
 
   /// Segundos transcurridos de la pausa en curso (máximo 2 minutos).
-  int _currentPauseSeconds(DateTime now) =>
-      pauseStartedAt == null ? 0 : math.min(_secondsSince(pauseStartedAt!, now), emergencyPauseSeconds);
+  int _currentPauseSeconds(DateTime now) => pauseStartedAt == null
+      ? 0
+      : math.min(_secondsSince(pauseStartedAt!, now), emergencyPauseSeconds);
 
   bool isPaused(DateTime now) =>
-      pauseStartedAt != null && _secondsSince(pauseStartedAt!, now) < emergencyPauseSeconds;
+      pauseStartedAt != null &&
+      _secondsSince(pauseStartedAt!, now) < emergencyPauseSeconds;
 
-  int pauseSecondsLeft(DateTime now) =>
-      isPaused(now) ? emergencyPauseSeconds - _secondsSince(pauseStartedAt!, now) : 0;
+  int pauseSecondsLeft(DateTime now) => isPaused(now)
+      ? emergencyPauseSeconds - _secondsSince(pauseStartedAt!, now)
+      : 0;
 
   /// Tiempo efectivo de la sesión (sin pausas, con los descansos saltados).
   int elapsed(DateTime now) {
-    final raw = _secondsSince(startedAt, now) - pausedSeconds - _currentPauseSeconds(now) + skippedSeconds;
+    final raw = _secondsSince(startedAt, now) -
+        pausedSeconds -
+        _currentPauseSeconds(now) +
+        skippedSeconds;
     return raw.clamp(0, totalSeconds);
   }
 
@@ -97,8 +108,8 @@ class SessionClock {
   }
 
   /// Hora estimada de fin de la sesión (contando lo que falte de la pausa).
-  DateTime endsAt(DateTime now) =>
-      now.add(Duration(seconds: pauseSecondsLeft(now) + totalSeconds - elapsed(now)));
+  DateTime endsAt(DateTime now) => now.add(
+      Duration(seconds: pauseSecondsLeft(now) + totalSeconds - elapsed(now)));
 
   /// Segundos reales de enfoque (sin contar descansos ni pausas).
   int focusSeconds(DateTime now) {
@@ -159,7 +170,9 @@ class ActiveSessionRecord {
     this.skippedSeconds = 0,
   });
 
-  factory ActiveSessionRecord.fromClock(String sessionId, String taskId, SessionClock clock) => ActiveSessionRecord(
+  factory ActiveSessionRecord.fromClock(
+          String sessionId, String taskId, SessionClock clock) =>
+      ActiveSessionRecord(
         sessionId: sessionId,
         taskId: taskId,
         startedAt: clock.startedAt,
@@ -178,12 +191,15 @@ class ActiveSessionRecord {
         'skipped_seconds': skippedSeconds,
       };
 
-  factory ActiveSessionRecord.fromDbMap(Map<String, Object?> row) => ActiveSessionRecord(
+  factory ActiveSessionRecord.fromDbMap(Map<String, Object?> row) =>
+      ActiveSessionRecord(
         sessionId: row['session_id'] as String,
         taskId: row['task_id'] as String,
         startedAt: DateTime.parse(row['started_at'] as String),
         pausedSeconds: row['paused_seconds'] as int? ?? 0,
-        pauseStartedAt: row['pause_started_at'] == null ? null : DateTime.parse(row['pause_started_at'] as String),
+        pauseStartedAt: row['pause_started_at'] == null
+            ? null
+            : DateTime.parse(row['pause_started_at'] as String),
         skippedSeconds: row['skipped_seconds'] as int? ?? 0,
       );
 }

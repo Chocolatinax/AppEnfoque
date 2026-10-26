@@ -29,7 +29,8 @@ class EnfoqueAppBar extends StatelessWidget implements PreferredSizeWidget {
         children: [
           Text(
             title,
-            style: TextStyle(color: p.onSurface, fontWeight: FontWeight.w800, fontSize: 24),
+            style: TextStyle(
+                color: p.onSurface, fontWeight: FontWeight.w800, fontSize: 24),
           ),
           Row(
             children: [
@@ -37,7 +38,10 @@ class EnfoqueAppBar extends StatelessWidget implements PreferredSizeWidget {
               const SizedBox(width: 4),
               Text(
                 'Sin internet · datos en tu teléfono',
-                style: TextStyle(color: p.onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.w500),
+                style: TextStyle(
+                    color: p.onSurfaceVariant,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500),
               ),
             ],
           ),
@@ -64,7 +68,8 @@ class SettingsButton extends StatelessWidget {
     return IconButton(
       onPressed: onTap,
       tooltip: 'Ajustes',
-      icon: Icon(Icons.settings_outlined, color: context.palette.onSurfaceVariant),
+      icon: Icon(Icons.settings_outlined,
+          color: context.palette.onSurfaceVariant),
     );
   }
 }

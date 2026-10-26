@@ -17,11 +17,13 @@ void main() {
         pomodoroRounds: rounds,
       );
 
-  SessionClock clockFor(Task t) => SessionClock(phases: SessionClock.phasesFor(t), startedAt: start);
+  SessionClock clockFor(Task t) =>
+      SessionClock(phases: SessionClock.phasesFor(t), startedAt: start);
 
   test('Tiempo libre: un solo aviso al terminar la sesión', () {
     final t = task(minutes: 45);
-    final events = NotificationService.planSessionEvents(clockFor(t), t, at(10));
+    final events =
+        NotificationService.planSessionEvents(clockFor(t), t, at(10));
     expect(events, hasLength(1));
     expect(events.single.title, '¡Sesión completada!');
     expect(events.single.at, at(45));
@@ -43,7 +45,8 @@ void main() {
 
   test('Solo programa lo que falta de la sesión', () {
     final t = task(rounds: 2);
-    final events = NotificationService.planSessionEvents(clockFor(t), t, at(40));
+    final events =
+        NotificationService.planSessionEvents(clockFor(t), t, at(40));
     expect(events.map((e) => e.at), [at(55), at(60)]);
   });
 
@@ -58,7 +61,8 @@ void main() {
 
   test('Sin avisos si la sesión ya terminó', () {
     final t = task(minutes: 25);
-    expect(NotificationService.planSessionEvents(clockFor(t), t, at(30)), isEmpty);
+    expect(
+        NotificationService.planSessionEvents(clockFor(t), t, at(30)), isEmpty);
   });
 
   test('La hora de fin estimada incluye la pausa', () {

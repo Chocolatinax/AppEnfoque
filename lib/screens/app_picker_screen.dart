@@ -31,7 +31,12 @@ class _AppPickerScreenState extends State<AppPickerScreen> {
     return widget.apps.where((a) => a.name.toLowerCase().contains(q)).toList();
   }
 
+  /// Último atajo tocado: si dos atajos marcan lo mismo (en iOS "Recomendadas" y
+  /// "Todas" son las mismas 9 redes sociales), se sombrea el que tocó el usuario.
+  String? _lastPreset;
+
   void _selectRecommended() => setState(() {
+        _lastPreset = 'Recomendadas';
         _selected
           ..clear()
           ..addAll(widget.apps
@@ -40,6 +45,7 @@ class _AppPickerScreenState extends State<AppPickerScreen> {
       });
 
   void _selectAll() => setState(() {
+        _lastPreset = 'Todas';
         _selected
           ..clear()
           ..addAll(
@@ -57,6 +63,7 @@ class _AppPickerScreenState extends State<AppPickerScreen> {
   String? get _activePreset {
     bool same(Set<String> other) =>
         _selected.length == other.length && _selected.containsAll(other);
+    if (_lastPreset == 'Todas' && same(_allSet)) return 'Todas';
     if (same(_recommendedSet)) return 'Recomendadas';
     if (same(_allSet)) return 'Todas';
     return null;

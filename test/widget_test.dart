@@ -70,17 +70,17 @@ void main() {
       (tester) async {
     await pumpForm(tester);
 
-    // Por defecto vienen marcadas las recomendadas (las 9 redes sociales del catálogo)
-    expect(find.text('9 apps elegidas'), findsOneWidget);
+    // Por defecto vienen marcadas las recomendadas (TikTok, Instagram, Facebook y Snapchat)
+    expect(find.text('4 apps elegidas'), findsOneWidget);
 
     // Abrir la pantalla de apps y desmarcar una por una (no hay atajo "Ninguna")
-    await tester.ensureVisible(find.text('9 apps elegidas'));
-    await tester.tap(find.text('9 apps elegidas'));
+    await tester.ensureVisible(find.text('4 apps elegidas'));
+    await tester.tap(find.text('4 apps elegidas'));
     await tester.pumpAndSettle();
     expect(find.text('Ninguna'), findsNothing);
-    for (final app in BlockableApps.all) {
-      await tester.ensureVisible(find.text(app.name));
-      await tester.tap(find.text(app.name));
+    for (final name in BlockableApps.catalogRecommended) {
+      await tester.ensureVisible(find.text(name));
+      await tester.tap(find.text(name));
       await tester.pumpAndSettle();
     }
     await tester.tap(find.text('Listo (ninguna)'));

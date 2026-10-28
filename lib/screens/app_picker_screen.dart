@@ -31,8 +31,8 @@ class _AppPickerScreenState extends State<AppPickerScreen> {
     return widget.apps.where((a) => a.name.toLowerCase().contains(q)).toList();
   }
 
-  /// Último atajo tocado: si dos atajos marcan lo mismo (en iOS "Recomendadas" y
-  /// "Todas" son las mismas 9 redes sociales), se sombrea el que tocó el usuario.
+  /// Último atajo tocado: si dos atajos llegaran a marcar lo mismo,
+  /// se sombrea el que tocó el usuario.
   String? _lastPreset;
 
   void _selectRecommended() => setState(() {

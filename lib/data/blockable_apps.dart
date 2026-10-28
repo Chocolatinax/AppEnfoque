@@ -12,15 +12,20 @@ class InstalledApp {
   /// Apps esenciales (teléfono, mensajes, ajustes, reloj): el atajo "Todas" no las marca.
   final bool essential;
 
+  /// Si es null, se decide por el catálogo de redes sociales (Android).
+  /// En iOS se indica a mano: ahí "Recomendadas" son solo 4 de las 9.
+  final bool? recommended;
+
   const InstalledApp({
     required this.name,
     required this.packageName,
     this.icon,
     this.essential = false,
+    this.recommended,
   });
 
   bool get isRecommended =>
-      BlockableApps.recommendedPackages.contains(packageName);
+      recommended ?? BlockableApps.recommendedPackages.contains(packageName);
 }
 
 /// Apps distractoras conocidas, con sus nombres de paquete en Android.
@@ -35,8 +40,9 @@ class BlockableApp {
 class BlockableApps {
   BlockableApps._();
 
-  /// Redes sociales: son las "Recomendadas" (en Android, las que estén instaladas;
-  /// en iOS, esta misma lista). Cualquier otra app se puede elegir a mano en Android.
+  /// Redes sociales que distraen. En Android son las "Recomendadas" (las que estén
+  /// instaladas); en iOS son la lista completa ("Todas") y las recomendadas son
+  /// [catalogRecommended]. Cualquier otra app se puede elegir a mano en Android.
   static const List<BlockableApp> all = [
     BlockableApp('Instagram', ['com.instagram.android']),
     BlockableApp(
@@ -52,7 +58,16 @@ class BlockableApps {
 
   /// Selección por defecto cuando no se puede leer la lista del teléfono (iOS / pruebas):
   /// todas las redes sociales.
-  static List<String> get defaultSelection => [for (final app in all) app.name];
+  static List<String> get defaultSelection => catalogRecommended;
+
+  /// "Recomendadas" fuera de Android (iOS): las 4 redes sociales que más distraen.
+  /// "Todas" sigue marcando las 9 del catálogo.
+  static const List<String> catalogRecommended = [
+    'TikTok',
+    'Instagram',
+    'Facebook',
+    'Snapchat',
+  ];
 
   static final Set<String> recommendedPackages = {
     for (final app in all) ...app.packages
@@ -61,7 +76,11 @@ class BlockableApps {
   /// Catálogo como lista de apps (se usa fuera de Android).
   static List<InstalledApp> get catalogAsInstalled => [
         for (final app in all)
-          InstalledApp(name: app.name, packageName: app.packages.first),
+          InstalledApp(
+            name: app.name,
+            packageName: app.packages.first,
+            recommended: catalogRecommended.contains(app.name),
+          ),
       ];
 
   /// Paquetes de Android para una lista de nombres del catálogo

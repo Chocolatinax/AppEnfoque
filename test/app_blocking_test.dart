@@ -110,6 +110,41 @@ void main() {
           result, {'com.instagram.android', 'com.google.android.calculator'});
     });
 
+    testWidgets('iOS: "Recomendadas" marca 4 y "Todas" marca las 9',
+        (tester) async {
+      Set<String>? result;
+      await tester.pumpWidget(MaterialApp(
+        theme: AppTheme.light,
+        home: Builder(
+          builder: (context) => TextButton(
+            onPressed: () async {
+              result = await Navigator.of(context).push<Set<String>>(
+                MaterialPageRoute(
+                    builder: (_) => AppPickerScreen(
+                        apps: BlockableApps.catalogAsInstalled,
+                        initialSelection: const {})),
+              );
+            },
+            child: const Text('abrir'),
+          ),
+        ),
+      ));
+      await tester.tap(find.text('abrir'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Todas'));
+      await tester.pumpAndSettle();
+      expect(find.text('Listo (9)'), findsOneWidget);
+
+      await tester.tap(find.text('Recomendadas'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Listo (4)'));
+      await tester.pumpAndSettle();
+      expect(result, BlockableApps.packagesFor(BlockableApps.catalogRecommended)
+          .where((p) => BlockableApps.catalogAsInstalled.any((a) => a.packageName == p))
+          .toSet());
+    });
+
     testWidgets('El buscador filtra la lista y se puede marcar a mano',
         (tester) async {
       final result = await openPicker(tester, () async {

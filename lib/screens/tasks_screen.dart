@@ -9,6 +9,7 @@ import '../widgets/common/priority_chip.dart';
 import '../widgets/common/task_delete.dart';
 import '../widgets/task_form_screen.dart';
 import 'session_launcher.dart';
+import '../data/daily_phrases.dart';
 import 'main_shell.dart';
 
 /// Pantalla de inicio: Tareas.
@@ -118,6 +119,30 @@ class _TasksScreenState extends State<TasksScreen> {
           const SizedBox(height: 2),
           Text(_todayText,
               style: t.bodyMedium!.copyWith(color: p.onSurfaceVariant)),
+          const SizedBox(height: AppSpacing.md),
+          // Frase motivacional del día (cambia según el día de la semana)
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ExcludeSemantics(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Icon(Icons.spa_outlined, size: 18, color: p.primary),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  DailyPhrases.forDate(DateTime.now()),
+                  style: t.bodyMedium!.copyWith(
+                    color: p.primary,
+                    fontStyle: FontStyle.italic,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: AppSpacing.xl),
           if (all.isEmpty)
             _EmptyTasksCard(

@@ -118,7 +118,11 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen>
       _tick(); // si se terminó mientras la app estaba cerrada, cierra la sesión
       // Si Floria se abrió porque intentaste abrir una app bloqueada, mostrar el recordatorio
       final pending = await AppBlocker.instance.consumePendingBlockedApp();
-      if (pending != null) _onBlockedApp(pending);
+      if (pending != null &&
+          pending.isFresh(
+              now: DateTime.now(), sessionStart: _clock.startedAt)) {
+        _onBlockedApp(pending);
+      }
     });
   }
 

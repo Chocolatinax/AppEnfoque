@@ -44,7 +44,8 @@ class BlockerAccessibilityService : AccessibilityService() {
         // en el reloj uptimeMillis), así la medición incluye el retraso del sistema
         val delayMs = (SystemClock.uptimeMillis() - event.eventTime).coerceAtLeast(0L)
         val openedAt = System.currentTimeMillis() - delayMs
-        if (now - (lastLaunchAt[pkg] ?: 0L) < 800) return
+        // 1.5 s: algunas apps (como YouTube) mandan dos eventos por apertura
+        if (now - (lastLaunchAt[pkg] ?: 0L) < 1500) return
         lastLaunchAt[pkg] = now
 
         val intent = Intent(this, MainActivity::class.java).apply {

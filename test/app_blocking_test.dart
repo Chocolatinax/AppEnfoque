@@ -40,6 +40,35 @@ void main() {
     });
   });
 
+  group('Avisos pendientes de apps bloqueadas', () {
+    final start = DateTime(2026, 10, 28, 8, 31);
+    BlockedAppEvent eventAt(DateTime at) =>
+        BlockedAppEvent('com.google.android.youtube', at);
+
+    test('Un aviso de hace un momento sí se muestra', () {
+      final event = eventAt(start.add(const Duration(minutes: 3)));
+      expect(
+          event.isFresh(
+              now: event.detectedAt.add(const Duration(seconds: 2)),
+              sessionStart: start),
+          isTrue);
+    });
+
+    test('Un aviso de hace 7 minutos se ignora (el caso de Gabriel)', () {
+      final event = eventAt(start.add(const Duration(minutes: 1)));
+      expect(
+          event.isFresh(
+              now: event.detectedAt.add(const Duration(milliseconds: 408237)),
+              sessionStart: start),
+          isFalse);
+    });
+
+    test('Un aviso de antes de que empezara la sesión se ignora', () {
+      final event = eventAt(start.subtract(const Duration(seconds: 3)));
+      expect(event.isFresh(now: start, sessionStart: start), isFalse);
+    });
+  });
+
   group('AppBlocker fuera de Android', () {
     test('No está disponible y sus llamadas no fallan', () async {
       final blocker = AppBlocker.instance;
@@ -140,9 +169,12 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Listo (4)'));
       await tester.pumpAndSettle();
-      expect(result, BlockableApps.packagesFor(BlockableApps.catalogRecommended)
-          .where((p) => BlockableApps.catalogAsInstalled.any((a) => a.packageName == p))
-          .toSet());
+      expect(
+          result,
+          BlockableApps.packagesFor(BlockableApps.catalogRecommended)
+              .where((p) => BlockableApps.catalogAsInstalled
+                  .any((a) => a.packageName == p))
+              .toSet());
     });
 
     testWidgets('El buscador filtra la lista y se puede marcar a mano',

@@ -94,8 +94,12 @@ class MainActivity : FlutterActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // Floria estaba cerrada: Flutter todavía no escucha, así que el aviso se guarda
-        // y la sesión lo pide al retomarse (consumePendingBlockedApp)
-        pendingBlockedApp = blockedAppFrom(intent)
+        // y la sesión lo pide al retomarse (consumePendingBlockedApp).
+        // Si Android VUELVE A CREAR la pantalla (cerró el proceso, o se abrió desde
+        // Recientes), el intent es el viejo: ese aviso ya no vale y se ignora.
+        val recreated = savedInstanceState != null ||
+            (intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) != 0
+        pendingBlockedApp = if (recreated) null else blockedAppFrom(intent)
     }
 
     private fun blockedAppFrom(intent: Intent?): Map<String, Any>? {

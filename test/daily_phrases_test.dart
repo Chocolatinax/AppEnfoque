@@ -9,8 +9,10 @@ void main() {
 
   test('Elige la frase según el día', () {
     // 26 de octubre de 2026 es lunes y el 1 de noviembre, domingo
-    expect(DailyPhrases.forDate(DateTime(2026, 10, 26)), DailyPhrases.byWeekday.first);
-    expect(DailyPhrases.forDate(DateTime(2026, 11, 1)), DailyPhrases.byWeekday.last);
+    expect(DailyPhrases.forDate(DateTime(2026, 10, 26)),
+        DailyPhrases.byWeekday.first);
+    expect(DailyPhrases.forDate(DateTime(2026, 11, 1)),
+        DailyPhrases.byWeekday.last);
   });
 
   test('Las frases son cortas (una o dos líneas en el teléfono)', () {

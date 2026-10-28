@@ -194,9 +194,9 @@ class AppTheme {
         backgroundColor: p.inverseSurface,
         contentTextStyle:
             textTheme.bodyMedium!.copyWith(color: p.inverseOnSurface),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadius.md)),
+        // Fijo (a todo lo ancho, encima de la barra de navegación): así el botón
+        // "Nueva tarea" sube mientras se ve el aviso, en vez de quedar tapado
+        behavior: SnackBarBehavior.fixed,
       ),
       dialogTheme: DialogThemeData(
         backgroundColor: p.surfaceContainerLowest,

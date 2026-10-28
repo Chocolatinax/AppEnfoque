@@ -10,6 +10,19 @@ class BlockedAppEvent {
   final DateTime detectedAt;
 
   const BlockedAppEvent(this.packageName, this.detectedAt);
+
+  /// Un aviso pendiente solo vale si es reciente y de esta sesión.
+  ///
+  /// Si Android cierra Floria y la vuelve a crear, puede entregar un aviso viejo:
+  /// sin este filtro, una sesión nueva mostraría "YouTube está bloqueada" sin que
+  /// el usuario la haya abierto.
+  bool isFresh({required DateTime now, required DateTime sessionStart}) {
+    final age = now.difference(detectedAt);
+    return age <= maxPendingAge && !detectedAt.isBefore(sessionStart);
+  }
+
+  /// Margen para que Floria arranque desde cero en teléfonos lentos.
+  static const Duration maxPendingAge = Duration(seconds: 10);
 }
 
 /// Puente entre Flutter y el bloqueo nativo de Android (Kotlin).

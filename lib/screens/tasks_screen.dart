@@ -106,11 +106,7 @@ class _TasksScreenState extends State<TasksScreen> {
     return Scaffold(
       appBar:
           EnfoqueAppBar(title: 'Tareas', onSettingsTap: widget.onOpenSettings),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => widget.onNavigate(MainShell.tabNueva),
-        icon: const Icon(Icons.add),
-        label: const Text('Nueva tarea'),
-      ),
+      // El botón "Nueva tarea" está en MainShell (ver ahí por qué)
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
             AppSpacing.screen, AppSpacing.sm, AppSpacing.screen, 112),

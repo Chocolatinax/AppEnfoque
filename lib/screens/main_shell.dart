@@ -85,6 +85,16 @@ class _MainShellState extends State<MainShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // El botón vive aquí (y no dentro de Tareas) porque los avisos de abajo,
+      // como "Tarea eliminada · Deshacer", se muestran en esta pantalla:
+      // así el botón sube mientras se ve el aviso y vuelve a bajar después
+      floatingActionButton: _currentIndex == MainShell.tabTareas
+          ? FloatingActionButton.extended(
+              onPressed: _openNewTask,
+              icon: const Icon(Icons.add),
+              label: const Text('Nueva tarea'),
+            )
+          : null,
       body: IndexedStack(
         index: _currentIndex,
         children: [

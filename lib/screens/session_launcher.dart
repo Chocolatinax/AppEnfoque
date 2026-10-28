@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../data/session_repository.dart';
 import '../models/task_model.dart';
 import '../services/app_blocker.dart';
 import '../services/notification_service.dart';
@@ -18,8 +19,26 @@ Future<bool> launchFocusSession(BuildContext context, Task task,
   final blocker = AppBlocker.instance;
   final needsBlocking = task.blockDistractions && task.blockedApps.isNotEmpty;
 
+  // ¿Es la primera sesión? (se lee antes de cualquier espera)
+  final isFirstSession = SessionScope.read(context)?.sessions.isEmpty ?? false;
+
   // Permiso de notificaciones (el sistema solo lo pregunta la primera vez)
-  await NotificationService.instance.requestPermission();
+  final notifications = NotificationService.instance;
+  await notifications.requestPermission();
+
+  // Android: en la PRIMERA sesión se ofrece activar "Alarmas y recordatorios"
+  // para que los avisos lleguen a la hora exacta (luego se puede activar en Ajustes)
+  if (isFirstSession &&
+      notifications.supportsExactAlarms &&
+      !await notifications.canScheduleExact()) {
+    if (!context.mounted) return false;
+    final activate = await showModalBottomSheet<bool>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) => const _ExactAlarmSheet(),
+    );
+    if (activate == true) await notifications.requestExactAlarms();
+  }
 
   if (needsBlocking && blocker.isSupported && !await blocker.isEnabled()) {
     if (!context.mounted) return false;
@@ -40,6 +59,8 @@ Future<bool> launchFocusSession(BuildContext context, Task task,
   }
 
   if (!context.mounted) return false;
+  // Que no se quede un aviso (por ejemplo "Tarea eliminada · Deshacer") encima de la sesión
+  ScaffoldMessenger.maybeOf(context)?.clearSnackBars();
   final route =
       MaterialPageRoute<void>(builder: (_) => ActiveSessionScreen(task: task));
   if (replace) {
@@ -88,6 +109,51 @@ class _PermissionSheet extends StatelessWidget {
               onPressed: () =>
                   Navigator.pop(context, _PermissionChoice.withoutBlocking),
               child: const Text('Iniciar sin bloqueo'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Explica el permiso de alarmas exactas antes de abrir el ajuste de Android.
+class _ExactAlarmSheet extends StatelessWidget {
+  const _ExactAlarmSheet();
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final t = Theme.of(context).textTheme;
+
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+            AppSpacing.xl, 0, AppSpacing.xl, AppSpacing.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Icon(Icons.alarm_on_outlined, size: 40, color: p.primary),
+            const SizedBox(height: AppSpacing.md),
+            Text('Avisos a tiempo',
+                textAlign: TextAlign.center, style: t.titleLarge),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              'Para avisarte justo cuando termina cada ronda o descanso, activa '
+              '"Alarmas y recordatorios" para Floria. Si no, los avisos pueden llegar unos minutos tarde.',
+              textAlign: TextAlign.center,
+              style: t.bodyMedium!.copyWith(color: p.onSurfaceVariant),
+            ),
+            const SizedBox(height: AppSpacing.xl),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Activar'),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Ahora no'),
             ),
           ],
         ),

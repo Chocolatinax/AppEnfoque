@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:enfoque_app/data/blockable_apps.dart';
 import 'package:enfoque_app/models/task_model.dart';
 import 'package:enfoque_app/theme/app_theme.dart';
 import 'package:enfoque_app/widgets/task_form_screen.dart';
@@ -72,12 +73,16 @@ void main() {
     // Por defecto vienen marcadas las recomendadas (las 9 redes sociales del catálogo)
     expect(find.text('9 apps elegidas'), findsOneWidget);
 
-    // Abrir la pantalla de apps y quitar todas
+    // Abrir la pantalla de apps y desmarcar una por una (no hay atajo "Ninguna")
     await tester.ensureVisible(find.text('9 apps elegidas'));
     await tester.tap(find.text('9 apps elegidas'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Ninguna'));
-    await tester.pumpAndSettle();
+    expect(find.text('Ninguna'), findsNothing);
+    for (final app in BlockableApps.all) {
+      await tester.ensureVisible(find.text(app.name));
+      await tester.tap(find.text(app.name));
+      await tester.pumpAndSettle();
+    }
     await tester.tap(find.text('Listo (ninguna)'));
     await tester.pumpAndSettle();
 

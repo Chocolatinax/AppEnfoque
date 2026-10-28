@@ -5,10 +5,9 @@ import '../theme/app_spacing.dart';
 
 /// Elegir qué apps bloquear durante la sesión.
 ///
-/// Muestra las apps instaladas (en Android) con buscador y tres atajos:
+/// Muestra las apps instaladas (en Android) con buscador y dos atajos:
 /// - Recomendadas: redes sociales instaladas.
-/// - Todas: todas menos las esenciales (teléfono, mensajes, ajustes, reloj).
-/// - Ninguna.
+/// - Todas: todas menos las esenciales (mensajes, reloj, contactos).
 ///
 /// Devuelve el conjunto de paquetes elegidos al tocar "Listo".
 class AppPickerScreen extends StatefulWidget {
@@ -47,8 +46,6 @@ class _AppPickerScreenState extends State<AppPickerScreen> {
               widget.apps.where((a) => !a.essential).map((a) => a.packageName));
       });
 
-  void _selectNone() => setState(_selected.clear);
-
   Set<String> get _recommendedSet => widget.apps
       .where((a) => a.isRecommended)
       .map((a) => a.packageName)
@@ -60,7 +57,6 @@ class _AppPickerScreenState extends State<AppPickerScreen> {
   String? get _activePreset {
     bool same(Set<String> other) =>
         _selected.length == other.length && _selected.containsAll(other);
-    if (_selected.isEmpty) return 'Ninguna';
     if (same(_recommendedSet)) return 'Recomendadas';
     if (same(_allSet)) return 'Todas';
     return null;
@@ -118,13 +114,12 @@ class _AppPickerScreenState extends State<AppPickerScreen> {
                     _presetChip('Recomendadas', Icons.auto_awesome_outlined,
                         _selectRecommended, p),
                     _presetChip('Todas', Icons.done_all, _selectAll, p),
-                    _presetChip('Ninguna', Icons.remove_done, _selectNone, p),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
-                  '"Todas" no incluye las apps esenciales como Teléfono, Mensajes, Ajustes y Reloj. '
-                  'Puedes marcarlas a mano si quieres.',
+                  'Ajustes y Teléfono nunca se bloquean. "Todas" tampoco marca las apps esenciales '
+                  'como Mensajes y Reloj, pero puedes marcarlas a mano.',
                   style: t.bodySmall,
                 ),
                 const SizedBox(height: AppSpacing.sm),

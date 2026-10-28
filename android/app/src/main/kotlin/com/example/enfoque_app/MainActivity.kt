@@ -7,6 +7,8 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.drawable.Drawable
 import android.os.Bundle
+import android.provider.AlarmClock
+import android.provider.ContactsContract
 import android.provider.Settings
 import android.provider.Telephony
 import android.telecom.TelecomManager
@@ -21,7 +23,7 @@ import io.flutter.plugin.common.MethodChannel
  * Expone el canal "floria/app_blocker" para que Flutter controle el bloqueo:
  * - isServiceEnabled: ¿el usuario activó el Servicio de Accesibilidad de Floria?
  * - openAccessibilitySettings: abre los ajustes de Accesibilidad de Android.
- * - startBlocking(packages): empieza a bloquear esa lista de apps.
+ * - startBlocking(packages, windows): bloquea esas apps dentro del horario de enfoque.
  * - stopBlocking: deja de bloquear (descansos, pausas o fin de la sesión).
  * - getLaunchableApps: lista las apps instaladas que se pueden abrir desde el menú.
  * - consumePendingBlockedApp: aviso guardado si Floria estaba cerrada cuando se abrió una app bloqueada.
@@ -56,8 +58,9 @@ class MainActivity : FlutterActivity() {
                     }
                     "startBlocking" -> {
                         val packages = call.argument<List<String>>("packages") ?: emptyList()
-                        val until = call.argument<Number>("until")?.toLong() ?: Long.MAX_VALUE
-                        BlockerState.start(this@MainActivity, packages, until)
+                        // Horario de los bloques de enfoque: [inicio1, fin1, inicio2, fin2, ...]
+                        val windows = call.argument<List<Number>>("windows")?.map { it.toLong() } ?: emptyList()
+                        BlockerState.start(this@MainActivity, packages, windows)
                         result.success(null)
                     }
                     "stopBlocking" -> {
@@ -83,6 +86,7 @@ class MainActivity : FlutterActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        setIntent(intent) // que getIntent() devuelva el intent más reciente
         // Floria ya estaba abierta: avisar a Flutter de inmediato
         blockedAppFrom(intent)?.let { channel?.invokeMethod("blockedAppOpened", it) }
     }
@@ -110,10 +114,12 @@ class MainActivity : FlutterActivity() {
         val pm = packageManager
         val launcherIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
         val essentials = essentialPackages()
+        val protected = ProtectedApps.packages(this) // Ajustes y Teléfono: nunca se bloquean
 
         return pm.queryIntentActivities(launcherIntent, 0)
             .distinctBy { it.activityInfo.packageName }
             .filter { it.activityInfo.packageName != packageName } // nunca bloquear a Floria
+            .filter { it.activityInfo.packageName !in protected }
             .map { info ->
                 val pkg = info.activityInfo.packageName
                 mapOf(
@@ -126,18 +132,32 @@ class MainActivity : FlutterActivity() {
             .sortedBy { (it["name"] as String).lowercase() }
     }
 
-    /** Apps esenciales: el atajo "Todas" no las marca (teléfono, mensajes, ajustes, reloj...). */
+    /**
+     * Apps esenciales: el atajo "Todas" no las marca (teléfono, mensajes, ajustes, reloj, contactos).
+     *
+     * En vez de una lista fija de paquetes (que cambia según la marca: Samsung, Xiaomi...),
+     * se le pregunta a Android qué app abre cada cosa en ESTE teléfono.
+     */
     private fun essentialPackages(): Set<String> {
         val set = mutableSetOf(
-            "com.android.settings",
-            "com.google.android.dialer", "com.android.dialer",
-            "com.google.android.contacts", "com.android.contacts",
-            "com.google.android.apps.messaging", "com.android.mms",
-            "com.google.android.deskclock", "com.android.deskclock",
-            "com.android.emergency"
+            // Respaldo por si alguna consulta no responde
+            "com.android.settings", "com.android.emergency",
+            "com.google.android.dialer", "com.google.android.apps.messaging",
+            "com.google.android.deskclock", "com.google.android.contacts"
         )
         (getSystemService(Context.TELECOM_SERVICE) as? TelecomManager)?.defaultDialerPackage?.let { set.add(it) }
         Telephony.Sms.getDefaultSmsPackage(this)?.let { set.add(it) }
+
+        val intents = listOf(
+            Intent(Settings.ACTION_SETTINGS),                 // Ajustes
+            Intent(AlarmClock.ACTION_SHOW_ALARMS),            // Reloj
+            Intent(Intent.ACTION_DIAL),                       // Teléfono
+            Intent(Intent.ACTION_VIEW, ContactsContract.Contacts.CONTENT_URI) // Contactos
+        )
+        for (intent in intents) {
+            packageManager.queryIntentActivities(intent, 0)
+                .forEach { set.add(it.activityInfo.packageName) }
+        }
         return set
     }
 

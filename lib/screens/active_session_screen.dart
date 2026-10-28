@@ -138,7 +138,9 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen>
     WidgetsBinding.instance.removeObserver(this);
     _timer?.cancel();
     _blockedSub?.cancel();
-    if (_blockingActive) AppBlocker.instance.stop();
+    // Solo se libera si la sesión terminó; si la app se cierra a mitad de sesión,
+    // Android sigue el horario de rondas por su cuenta
+    if (_ended && _blockedPackages.isNotEmpty) AppBlocker.instance.stop();
     _secondsLeftNotifier.dispose();
     _breath.dispose();
     super.dispose();
@@ -156,6 +158,7 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen>
         NotificationService.instance.scheduleSessionEvents(_clock, widget.task);
       case AppLifecycleState.resumed:
         NotificationService.instance.cancelScheduled();
+        _sendBlockingSchedule(); // corrige cualquier desfase del horario
         _tick();
       case AppLifecycleState.detached:
         break;
@@ -174,6 +177,16 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen>
     NotificationService.instance.showSessionInProgress(
         widget.task, _clock.endsAt(DateTime.now()),
         update: true);
+    _sendBlockingSchedule();
+  }
+
+  /// Le pasa a Android el horario de los bloques de enfoque que faltan.
+  /// Así cada ronda bloquea a su hora aunque Floria esté cerrada, y los descansos
+  /// y la pausa de emergencia quedan libres.
+  void _sendBlockingSchedule() {
+    if (_ended || _blockedPackages.isEmpty) return;
+    AppBlocker.instance
+        .start(_blockedPackages, windows: _clock.focusWindows(DateTime.now()));
   }
 
   void _tick() {
@@ -227,6 +240,7 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen>
   // ---------- Bloqueo de apps ----------
 
   /// Se bloquea solo durante el enfoque; en descansos, pausas y al terminar se libera.
+  /// (Android lo hace solo con el horario; aquí se usa para la pantalla de recordatorio.)
   bool get _shouldBlock =>
       !_ended && _phase.isFocus && !_isPaused && _blockedPackages.isNotEmpty;
 
@@ -234,12 +248,8 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen>
     final should = _shouldBlock;
     if (should == _blockingActive) return;
     _blockingActive = should;
-    if (should) {
-      // Vence al terminar este bloque de enfoque (por si la app se cierra)
-      AppBlocker.instance.start(_blockedPackages,
-          until: DateTime.now().add(Duration(seconds: _secondsLeft)));
-    } else {
-      AppBlocker.instance.stop();
+    if (!should) {
+      if (_ended && _blockedPackages.isNotEmpty) AppBlocker.instance.stop();
       // Si empieza un descanso o termina la sesión con el recordatorio abierto, se cierra solo
       if (_reminderOpen && mounted) {
         final sessionRoute = ModalRoute.of(context);
@@ -346,6 +356,8 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen>
     _ended = true;
     _timer?.cancel();
     _syncBlocking();
+    // Liberar ya el bloqueo (también las rondas que faltaban del horario)
+    if (_blockedPackages.isNotEmpty) AppBlocker.instance.stop();
     await _record(SessionStatus.abandoned);
     if (!mounted) return;
 
@@ -506,6 +518,25 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen>
                             ),
                           ],
                         ),
+                        // Una ventana flotante (imagen en imagen) no cuenta como abrir
+                        // la app, así que el bloqueo no la detecta
+                        if (AppBlocker.instance.isSupported) ...[
+                          const SizedBox(height: AppSpacing.xs),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Icon(Icons.picture_in_picture_alt_outlined,
+                                  size: 16, color: p.onSurfaceVariant),
+                              const SizedBox(width: AppSpacing.xs),
+                              Expanded(
+                                child: Text(
+                                  'Si tienes un video en ventana flotante, ciérralo: esa ventana no se puede bloquear.',
+                                  style: t.bodySmall,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ],
                     ],
                   ),

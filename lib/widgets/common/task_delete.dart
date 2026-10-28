@@ -51,7 +51,9 @@ Future<void> deleteTaskWithUndo(BuildContext context, Task task) async {
         textColor: p.primaryFixed,
         onPressed: () => repo.add(task),
       ),
-      duration: const Duration(seconds: 5),
+      // Con botón, Flutter lo deja fijo si no se indica lo contrario
+      persist: false,
+      duration: const Duration(seconds: 6),
     ),
   );
 }

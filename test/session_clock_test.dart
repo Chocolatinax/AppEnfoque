@@ -121,6 +121,33 @@ void main() {
     });
   });
 
+  group('Horario de bloqueo (se le pasa a Android)', () {
+    test('Pomodoro: un horario por ronda, sin los descansos', () {
+      final clock = clockFor(pomodoroTask(2)); // 25 enf, 5 desc, 25 enf, 5 desc
+      expect(clock.focusWindows(at(0)), [(at(0), at(25)), (at(30), at(55))]);
+    });
+
+    test('Desde un descanso, el primer horario es la siguiente ronda', () {
+      final clock = clockFor(pomodoroTask(2));
+      expect(clock.focusWindows(at(27)), [(at(30), at(55))]);
+    });
+
+    test('En pausa, todo se corre lo que falta de la pausa', () {
+      final clock = clockFor(freeTask(25))..startPause(at(10));
+      // Faltan 15 min de enfoque y 2 min de pausa
+      expect(clock.focusWindows(at(10)), [(at(12), at(27))]);
+    });
+
+    test('Al saltar un descanso, la siguiente ronda empieza ya', () {
+      final clock = clockFor(pomodoroTask(2))..skipCurrentPhase(at(26));
+      expect(clock.focusWindows(at(26)), [(at(26), at(51))]);
+    });
+
+    test('Sin horarios si la sesión ya terminó', () {
+      expect(clockFor(freeTask(25)).focusWindows(at(30)), isEmpty);
+    });
+  });
+
   group('Sesión en curso guardada en SQLite', () {
     sqfliteFfiInit();
 

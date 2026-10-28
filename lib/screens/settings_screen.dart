@@ -122,6 +122,9 @@ class SettingsScreen extends StatelessWidget {
                 );
               },
             ),
+            // Solo Android: en iOS los avisos ya llegan a la hora exacta
+            if (NotificationService.instance.supportsExactAlarms)
+              const _ExactAlarmTile(),
           ]),
 
           const _SectionLabel('Tus datos'),
@@ -233,6 +236,68 @@ class _SettingsTile extends StatelessWidget {
       trailing: destructive
           ? null
           : Icon(Icons.chevron_right, color: p.onSurfaceVariant),
+    );
+  }
+}
+
+/// "Avisos a tiempo": muestra si el permiso de alarmas exactas está activo y permite activarlo.
+class _ExactAlarmTile extends StatefulWidget {
+  const _ExactAlarmTile();
+
+  @override
+  State<_ExactAlarmTile> createState() => _ExactAlarmTileState();
+}
+
+class _ExactAlarmTileState extends State<_ExactAlarmTile>
+    with WidgetsBindingObserver {
+  bool? _enabled;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _refresh();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  // Al volver de los ajustes de Android, actualizar el estado
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _refresh();
+  }
+
+  Future<void> _refresh() async {
+    final enabled = await NotificationService.instance.canScheduleExact();
+    if (mounted) setState(() => _enabled = enabled);
+  }
+
+  Future<void> _onTap() async {
+    if (_enabled == true) {
+      showAppSnackBar(context, 'Tus avisos ya llegan a tiempo',
+          icon: Icons.alarm_on_outlined);
+      return;
+    }
+    await NotificationService.instance.requestExactAlarms();
+    await _refresh();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _SettingsTile(
+      icon: Icons.alarm_on_outlined,
+      title: 'Avisos a tiempo',
+      subtitle: switch (_enabled) {
+        null => 'Revisando…',
+        true => 'Activado: los avisos llegan a la hora exacta',
+        false =>
+          'Desactivado: los avisos pueden llegar unos minutos tarde. Toca para activarlo',
+      },
+      onTap: _onTap,
     );
   }
 }

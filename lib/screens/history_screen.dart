@@ -4,6 +4,7 @@ import '../models/focus_session.dart';
 import '../theme/app_palette.dart';
 import '../theme/app_spacing.dart';
 import '../widgets/common/app_card.dart';
+import '../utils/plural.dart';
 import '../widgets/common/enfoque_app_bar.dart';
 
 /// Historial semanal construido con las sesiones guardadas en SQLite.
@@ -142,7 +143,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
                     child: _Metric(
-                        label: 'Racha', value: '${repo.currentStreak()} días')),
+                        label: 'Racha',
+                        value: plural(repo.currentStreak(), 'día', 'días'))),
               ],
             ),
             if (_weekOffset == 0 && prevWeek.isNotEmpty) ...[

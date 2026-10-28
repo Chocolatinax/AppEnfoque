@@ -80,5 +80,19 @@
             <action android:name="android.intent.action.MAIN"/>
             <category android:name="android.intent.category.LAUNCHER"/>
         </intent>
+        <!-- Floria: reconocer las apps esenciales de cada marca (ajustes, reloj, teléfono, contactos) -->
+        <intent>
+            <action android:name="android.settings.SETTINGS"/>
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.SHOW_ALARMS"/>
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.DIAL"/>
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:mimeType="vnd.android.cursor.dir/contact"/>
+        </intent>
     </queries>
 </manifest>

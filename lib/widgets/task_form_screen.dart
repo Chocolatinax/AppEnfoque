@@ -9,6 +9,7 @@ import '../screens/session_launcher.dart';
 import '../theme/app_palette.dart';
 import '../theme/app_spacing.dart';
 import '../utils/form_validators.dart';
+import '../utils/plural.dart';
 import '../utils/ui_feedback.dart';
 
 /// Formulario "Nueva tarea".
@@ -508,7 +509,7 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                 icon: const Icon(Icons.remove),
               ),
               Semantics(
-                label: '$_rounds rondas',
+                label: plural(_rounds, 'ronda', 'rondas'),
                 excludeSemantics: true,
                 child: SizedBox(
                   width: 44,

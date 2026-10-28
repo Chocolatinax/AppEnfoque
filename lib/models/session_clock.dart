@@ -124,6 +124,25 @@ class SessionClock {
     return focus;
   }
 
+  /// Horarios de los bloques de enfoque que faltan (inicio, fin), contando desde [now].
+  ///
+  /// Se le pasan a Android para que bloquee en cada ronda aunque Floria esté cerrada.
+  /// Si hay una pausa en curso, todo empieza cuando termine la pausa. Si el usuario
+  /// pausa o salta un descanso, Floria recalcula los horarios y los vuelve a enviar.
+  List<(DateTime, DateTime)> focusWindows(DateTime now) {
+    final pos = position(now);
+    if (pos.finished) return const [];
+    var time = now.add(Duration(seconds: pauseSecondsLeft(now)));
+    final windows = <(DateTime, DateTime)>[];
+    for (var i = pos.index; i < phases.length; i++) {
+      final seconds = i == pos.index ? pos.secondsLeft : phases[i].seconds;
+      final end = time.add(Duration(seconds: seconds));
+      if (phases[i].isFocus) windows.add((time, end));
+      time = end;
+    }
+    return windows;
+  }
+
   /// Si la pausa ya cumplió sus 2 minutos, la cierra. Devuelve `true` si cambió algo.
   bool settlePause(DateTime now) {
     if (pauseStartedAt != null && !isPaused(now)) {

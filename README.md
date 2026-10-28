@@ -49,7 +49,7 @@ Floria está pensada para estudiantes de bachillerato y universidad (de 15 a 25 
 | **Bienvenida** | Primera pantalla si todavía no hay tareas. Explica la app y lleva a crear la primera tarea. |
 | **Tareas** | Inicio. Muestra "Tu siguiente tarea", filtros por prioridad (Todas, Baja, Media, Alta) y la lista de tareas. Cada tarea tiene una casilla para marcarla como hecha, ▶ para iniciar el enfoque y un menú ⋮ con **Editar** y **Eliminar** (este último con opción de deshacer). |
 | **Nueva / Editar tarea** | Formulario con validaciones: título, objetivo (mínimo 4 palabras y 15 caracteres), modo **Tiempo libre** o **Pomodoro** (1 a 6 rondas), prioridad y apps a bloquear. |
-| **Elegir apps** | Lista de las apps instaladas (Android) con atajos: redes sociales recomendadas, todas o ninguna. |
+| **Elegir apps** | Lista de las apps instaladas (Android) con atajos: redes sociales recomendadas o todas (menos las esenciales, como Teléfono, Ajustes y Reloj). |
 | **Sesión activa** | Temporizador con las fases de Pomodoro, el objetivo a la vista, una pausa de emergencia de 2 minutos y la opción de abandonar. Al terminar pregunta si se cumplió el objetivo. |
 | **Recordatorio** | Aparece cuando se abre una app bloqueada: dice qué app es, cuánto falta y el objetivo, con un solo botón "Volver a mi sesión". |
 | **Enfoque** | Resumen del día y tareas pendientes para empezar una sesión. |
@@ -146,7 +146,7 @@ El archivo queda en `build/app/outputs/flutter-apk/app-debug.apk` y se puede ins
 | :--- | :--- | :--- |
 | Notificaciones (Android 13+) | Al iniciar la primera sesión | Mostrar la sesión en curso y los avisos |
 | Servicio de Accesibilidad "Floria: bloqueo de distracciones" | Al iniciar una sesión con apps bloqueadas | Detectar qué app se abre (no lee el contenido de las pantallas) |
-| Alarmas exactas | Automático | Que los avisos lleguen a la hora exacta |
+| Alarmas y recordatorios (alarmas exactas) | Al iniciar la primera sesión (o en Ajustes → Avisos a tiempo) | Que los avisos lleguen a la hora exacta; sin él pueden llegar unos minutos tarde |
 
 ---
 
@@ -192,7 +192,9 @@ Durante una sesión, Floria detecta si abres una app bloqueada y te muestra un r
 
 - El bloqueo está activo durante el enfoque y se libera en los descansos, en la pausa de emergencia y al terminar la sesión.
 - El servicio solo lee el nombre del paquete de la app que se abre. No lee el contenido de las pantallas ni envía datos.
-- El bloqueo tiene hora de vencimiento: si la app se cierra a la fuerza, el bloqueo se apaga solo al terminar la sesión.
+- Android guarda el **horario de las rondas de enfoque**: aunque Floria se cierre, cada ronda de Pomodoro bloquea a su hora, los descansos y la pausa de emergencia quedan libres, y el bloqueo se apaga solo al terminar la última ronda.
+- **Ajustes y Teléfono nunca se bloquean:** no aparecen en la lista, para que siempre se pueda apagar el servicio y hacer llamadas de emergencia.
+- **Ventana flotante (imagen en imagen):** si un video de una app bloqueada queda en ventana flotante, Floria no lo detecta, porque no hay un cambio de app. Ninguna app puede cerrar la ventana flotante de otra, así que la sesión le pide al usuario cerrarla. Quien quiera ver videos en ventana flotante puede no bloquear esa app.
 - **En iOS no hay bloqueo:** Apple solo lo permite con la API *Screen Time*, que requiere un permiso especial de Apple. La versión iOS está fuera del alcance del proyecto, pero el resto de la app funciona igual.
 
 ### Cómo probarlo
@@ -201,7 +203,7 @@ Durante una sesión, Floria detecta si abres una app bloqueada y te muestra un r
 2. Corre la app y crea una tarea con **YouTube** marcada en "Bloquear apps".
 3. Toca ▶. La primera vez, Floria pide activar el permiso: Ajustes → Accesibilidad → **Floria: bloqueo de distracciones** → activar.
 4. Con la sesión corriendo, abre YouTube. Floria debe aparecer en menos de 2 segundos con el recordatorio.
-5. En la terminal de `flutter run` aparece la medición: `[R1] Recordatorio de YouTube mostrado en … ms`.
+5. En la terminal de `flutter run` aparece la medición: `[R1] Recordatorio de YouTube mostrado en … ms`. Se mide desde que Android registró la apertura de la app, así que incluye el retraso del sistema.
 
 > **Android 13 o más nuevo:** si el permiso aparece como "Ajuste restringido", ve a Ajustes → Apps → Floria → menú ⋮ → **Permitir ajustes restringidos** y vuelve a intentarlo.
 

@@ -76,6 +76,35 @@ class NotificationService {
     }
   }
 
+  // ---------- Alarmas exactas (solo Android) ----------
+
+  /// Android 12+ pide el permiso "Alarmas y recordatorios" para avisar a la hora exacta.
+  /// En iOS no existe: los avisos ya llegan a tiempo.
+  bool get supportsExactAlarms => isSupported && Platform.isAndroid;
+
+  AndroidFlutterLocalNotificationsPlugin? get _android =>
+      _plugin.resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>();
+
+  /// ¿Los avisos pueden llegar a la hora exacta?
+  Future<bool> canScheduleExact() async {
+    if (!_ready || !supportsExactAlarms) return false;
+    try {
+      return await _android?.canScheduleExactNotifications() ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Abre el ajuste "Alarmas y recordatorios" de Floria. Devuelve si quedó activado.
+  Future<bool> requestExactAlarms() async {
+    if (!_ready || !supportsExactAlarms) return false;
+    try {
+      await _android?.requestExactAlarmsPermission();
+    } catch (_) {}
+    return canScheduleExact();
+  }
+
   // ---------- Notificaciones de la sesión ----------
 
   /// "Sesión de enfoque en curso · Termina a las HH:MM".

@@ -18,7 +18,16 @@ import android.view.accessibility.AccessibilityEvent
  */
 class BlockerAccessibilityService : AccessibilityService() {
 
-    private var lastLaunchAt = 0L
+    /** Última vez que se abrió el recordatorio por cada app (filtro de eventos repetidos). */
+    private val lastLaunchAt = mutableMapOf<String, Long>()
+
+    /** Ajustes y Teléfono: nunca se bloquean (ver ProtectedApps). */
+    private var protectedPackages: Set<String> = emptySet()
+
+    override fun onServiceConnected() {
+        super.onServiceConnected()
+        protectedPackages = ProtectedApps.packages(this)
+    }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event?.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
@@ -26,12 +35,17 @@ class BlockerAccessibilityService : AccessibilityService() {
 
         // Ignorar a Floria misma y cuando no hay sesión activa
         if (pkg == packageName || !BlockerState.isActive(this)) return
-        if (pkg !in BlockerState.blockedPackages(this)) return
+        if (pkg in protectedPackages || pkg !in BlockerState.blockedPackages(this)) return
 
-        // Evitar abrir Floria varias veces seguidas por eventos repetidos
+        // Evitar abrir Floria varias veces seguidas por eventos repetidos de la MISMA app
+        // (si se abren dos apps bloqueadas distintas, cada una lanza su recordatorio)
         val now = SystemClock.elapsedRealtime()
-        if (now - lastLaunchAt < 800) return
-        lastLaunchAt = now
+        // R1: se mide desde que Android registró la apertura de la app (event.eventTime,
+        // en el reloj uptimeMillis), así la medición incluye el retraso del sistema
+        val delayMs = (SystemClock.uptimeMillis() - event.eventTime).coerceAtLeast(0L)
+        val openedAt = System.currentTimeMillis() - delayMs
+        if (now - (lastLaunchAt[pkg] ?: 0L) < 800) return
+        lastLaunchAt[pkg] = now
 
         val intent = Intent(this, MainActivity::class.java).apply {
             addFlags(
@@ -40,7 +54,7 @@ class BlockerAccessibilityService : AccessibilityService() {
                     Intent.FLAG_ACTIVITY_CLEAR_TOP
             )
             putExtra(MainActivity.EXTRA_BLOCKED_PACKAGE, pkg)
-            putExtra(MainActivity.EXTRA_DETECTED_AT, System.currentTimeMillis())
+            putExtra(MainActivity.EXTRA_DETECTED_AT, openedAt)
         }
         startActivity(intent)
     }

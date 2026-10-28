@@ -75,11 +75,22 @@ class AppBlocker {
   /// Abre los ajustes de Accesibilidad de Android.
   Future<void> openSettings() => _call('openAccessibilitySettings');
 
-  /// Empieza a bloquear los [packages] hasta [until] (fin del bloque de enfoque).
-  /// Si Floria se cierra y no se vuelve a abrir, el bloqueo se libera solo a esa hora.
-  Future<void> start(List<String> packages, {required DateTime until}) => _call(
-      'startBlocking',
-      {'packages': packages, 'until': until.millisecondsSinceEpoch});
+  /// Bloquea los [packages] solo dentro de los horarios de enfoque [windows] (inicio, fin).
+  ///
+  /// Android guarda el horario completo: aunque Floria se cierre, cada ronda de
+  /// Pomodoro bloquea a su hora y los descansos quedan libres. Al terminar el último
+  /// bloque, el bloqueo se libera solo.
+  Future<void> start(List<String> packages,
+          {required List<(DateTime, DateTime)> windows}) =>
+      _call('startBlocking', {
+        'packages': packages,
+        'windows': [
+          for (final (start, end) in windows) ...[
+            start.millisecondsSinceEpoch,
+            end.millisecondsSinceEpoch,
+          ],
+        ],
+      });
 
   /// Aviso de app bloqueada que llegó mientras Floria estaba cerrada (o null).
   Future<BlockedAppEvent?> consumePendingBlockedApp() async {

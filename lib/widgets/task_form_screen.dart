@@ -12,15 +12,6 @@ import '../utils/form_validators.dart';
 import '../utils/plural.dart';
 import '../utils/ui_feedback.dart';
 
-/// Formulario "Nueva tarea".
-///
-/// Sigue la especificación de la entrega del formulario:
-/// `Form` + `GlobalKey<FormState>` + `TextFormField` con `validator`, y la regla de
-/// "al menos una app bloqueada". Se simplificó la interfaz para que no abrume:
-/// solo lo necesario para la tarea principal (título, objetivo, tiempo, prioridad y bloqueo).
-///
-/// Con [initialTask] funciona como "Editar tarea": carga sus datos, guarda los
-/// cambios sobre la misma tarea y permite eliminarla.
 class TaskFormScreen extends StatefulWidget {
   final Task? initialTask;
 
@@ -45,7 +36,6 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
   bool _blockDistractions = true;
   String? _appsError;
 
-  // Apps que se pueden bloquear (en Android, las instaladas en el teléfono)
   List<InstalledApp> _availableApps = [];
   final Set<String> _selectedPackages = {};
   bool _appsLoaded = false;
@@ -57,7 +47,6 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
     super.initState();
     final task = widget.initialTask;
     if (task != null) {
-      // Editar tarea: cargar sus datos en el formulario
       _titleController.text = task.title;
       _goalController.text = task.goal;
       _timerMode = task.timerMode;
@@ -73,7 +62,6 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
     _loadApps();
   }
 
-  /// Carga las apps. En una tarea nueva marca las recomendadas; al editar, las que ya tenía.
   Future<void> _loadApps() async {
     final apps = await AppBlocker.instance.getLaunchableApps();
     if (!mounted) return;
@@ -128,7 +116,6 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
     });
   }
 
-  /// Apps elegidas, en el orden de la lista.
   List<InstalledApp> get _chosenApps => _availableApps
       .where((a) => _selectedPackages.contains(a.packageName))
       .toList();
@@ -147,7 +134,6 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
 
   int get _pomodoroFocusMinutes => _rounds * Pomodoro.focusMinutes;
 
-  /// Minutos de descanso: cada ronda (incluida la última) termina con su descanso.
   int get _pomodoroBreakMinutes {
     var total = 0;
     for (var r = 1; r <= _rounds; r++) {
@@ -243,10 +229,8 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
   }
 
   Future<void> _submit({required bool startNow}) async {
-    // 1. Validar los TextFormField con la GlobalKey del Form
     final isFormValid = _formKey.currentState!.validate();
 
-    // 2. Validar la regla de apps bloqueadas
     final appsError = FormValidators.validateBlockedApps(
       isBlockingEnabled: _blockDistractions,
       apps: _selectedApps,
@@ -265,7 +249,6 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
 
     final original = widget.initialTask;
     final task = Task(
-      // Al editar se conserva la misma tarea (id, fecha de creación y si ya estaba hecha)
       id: original?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
       createdAt: original?.createdAt,
       isDone: original?.isDone ?? false,
@@ -284,7 +267,6 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
           : const [],
     );
 
-    // 3. Guardar en SQLite
     final repo = TaskScope.read(context);
     if (_isEditing) {
       await repo?.update(task);
@@ -294,8 +276,6 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
     if (!mounted) return;
 
     if (startNow) {
-      // La sesión reemplaza al formulario: al terminar se vuelve a Tareas.
-      // Si no se pudo iniciar (por ejemplo, canceló el permiso), la tarea ya quedó guardada.
       final started = await launchFocusSession(context, task, replace: true);
       if (!started && mounted) {
         showAppSnackBar(context, 'Tarea guardada en tu lista');
@@ -324,7 +304,6 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // ---------- 1. ¿Qué vas a hacer? ----------
               const _SectionTitle('¿Qué vas a hacer?'),
               TextFormField(
                 controller: _titleController,
@@ -351,8 +330,6 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                 ),
                 validator: FormValidators.validateGoal,
               ),
-
-              // ---------- 2. Tiempo ----------
               const _SectionTitle('¿Cómo quieres medir el tiempo?'),
               SegmentedButton<String>(
                 segments: const [
@@ -373,8 +350,6 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                 _buildPomodoroOptions(p, t)
               else
                 _buildFreeTimeOptions(p),
-
-              // ---------- 3. Prioridad ----------
               const _SectionTitle('Prioridad'),
               SegmentedButton<String>(
                 segments: const [
@@ -386,12 +361,8 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                 showSelectedIcon: false,
                 onSelectionChanged: (s) => setState(() => _priority = s.first),
               ),
-
-              // ---------- 4. Bloqueo ----------
               const _SectionTitle('Distracciones'),
               _buildBlockingCard(p, t),
-
-              // ---------- Acciones ----------
               const SizedBox(height: AppSpacing.xxl),
               if (_isEditing) ...[
                 SizedBox(

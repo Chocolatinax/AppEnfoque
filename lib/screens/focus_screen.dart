@@ -10,10 +10,6 @@ import '../widgets/common/priority_chip.dart';
 import 'session_launcher.dart';
 import 'main_shell.dart';
 
-/// Pestaña "Enfoque": elegir una tarea pendiente y empezar la sesión.
-///
-/// Muestra cuánto llevas enfocado hoy y la lista de tareas pendientes,
-/// cada una con su botón para iniciar (2 toques desde la barra inferior).
 class FocusScreen extends StatelessWidget {
   final ValueChanged<int> onNavigate;
   final VoidCallback onOpenSettings;
@@ -33,7 +29,6 @@ class FocusScreen extends StatelessWidget {
     final t = Theme.of(context).textTheme;
     final pending = TaskScope.of(context).pendingTasks;
 
-    // Resumen de hoy desde el historial
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final todaySessions = SessionScope.of(context)
@@ -48,7 +43,6 @@ class FocusScreen extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(AppSpacing.screen, AppSpacing.sm,
             AppSpacing.screen, AppSpacing.xxl),
         children: [
-          // Resumen del día
           AppCard(
             color: p.primaryFixed,
             child: MergeSemantics(
@@ -84,7 +78,6 @@ class FocusScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.xl),
-
           Semantics(
               header: true,
               child: Text('¿En qué te vas a enfocar?', style: t.titleLarge)),
@@ -94,7 +87,6 @@ class FocusScreen extends StatelessWidget {
             style: t.bodyMedium!.copyWith(color: p.onSurfaceVariant),
           ),
           const SizedBox(height: AppSpacing.lg),
-
           if (pending.isEmpty)
             AppCard(
               padding: const EdgeInsets.all(AppSpacing.xl),

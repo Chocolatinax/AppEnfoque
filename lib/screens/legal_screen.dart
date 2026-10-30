@@ -3,10 +3,8 @@ import '../theme/app_palette.dart';
 import '../theme/app_spacing.dart';
 import '../widgets/common/app_card.dart';
 
-/// Documentos legales de Floria.
 enum LegalDocument { terms, privacy }
 
-/// Una sección del documento: título, párrafos y viñetas opcionales.
 class _LegalSection {
   final String title;
   final List<String> paragraphs;
@@ -15,11 +13,6 @@ class _LegalSection {
   const _LegalSection(this.title, this.paragraphs, [this.bullets = const []]);
 }
 
-/// Términos de uso y Política de privacidad.
-///
-/// Escritos en lenguaje simple: Floria no tiene cuenta, servidor ni internet,
-/// así que la política explica sobre todo qué se guarda en el teléfono y para
-/// qué sirve cada permiso.
 class LegalScreen extends StatelessWidget {
   final LegalDocument document;
 
@@ -27,7 +20,6 @@ class LegalScreen extends StatelessWidget {
 
   static const String lastUpdated = '25 de octubre de 2026';
 
-  /// Correo de contacto del equipo (para la demo).
   static const String contactEmail = '20245233@esen.edu.sv';
 
   String get _title => switch (document) {

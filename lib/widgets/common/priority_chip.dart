@@ -2,10 +2,6 @@ import 'package:flutter/material.dart';
 import '../../theme/app_palette.dart';
 import '../../theme/app_spacing.dart';
 
-/// Etiqueta de prioridad ('Alta', 'Media', 'Baja').
-///
-/// Accesible: la prioridad no depende solo del color, lleva texto e ícono,
-/// y el lector de pantalla la anuncia como "Prioridad alta", etc.
 class PriorityChip extends StatelessWidget {
   final String priority;
 

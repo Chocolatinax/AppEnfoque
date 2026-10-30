@@ -3,11 +3,6 @@ import '../theme/app_palette.dart';
 import '../theme/app_spacing.dart';
 import '../widgets/common/app_card.dart';
 
-/// Acerca de Floria: versión, equipo y "Próximamente en Floria".
-///
-/// "Próximamente" muestra la visión del producto: son las funciones que la
-/// ficha del proyecto declara FUERA de alcance para esta versión
-/// ("no eliminadas del concepto de negocio"). Es solo informativo, no hay botones.
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
 

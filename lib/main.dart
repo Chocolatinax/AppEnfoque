@@ -15,20 +15,17 @@ Future<void> main() async {
     const SystemUiOverlayStyle(statusBarColor: Colors.transparent),
   );
 
-  // Notificaciones locales (inicio, descansos y fin de las sesiones)
   await NotificationService.instance.init();
 
-  // Abre la base de datos local (SQLite) y carga las tareas guardadas
   final database = await AppDatabase.open();
   final taskRepository = TaskRepository(database);
   final sessionRepository = SessionRepository(database);
   await Future.wait([taskRepository.load(), sessionRepository.load()]);
 
-  // ¿Quedó una sesión en curso cuando se cerró la app? (R5)
   ActiveSessionRecord? activeSession = await sessionRepository.loadActive();
   if (activeSession != null &&
       taskRepository.tasks.every((t) => t.id != activeSession!.taskId)) {
-    await sessionRepository.clearActive(); // su tarea ya no existe
+    await sessionRepository.clearActive();
     activeSession = null;
   }
 
@@ -39,8 +36,6 @@ Future<void> main() async {
   ));
 }
 
-/// Todas las pantallas usan la paleta adaptable (context.palette), así que la app
-/// sigue el modo claro/oscuro del sistema. Con `false` se fuerza el modo claro.
 const bool kDarkModeReady = true;
 
 class FloriaApp extends StatelessWidget {
@@ -57,7 +52,6 @@ class FloriaApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // TaskScope y SessionScope dejan los datos disponibles en todas las pantallas
     return SessionScope(
       repository: sessionRepository,
       child: TaskScope(
@@ -68,9 +62,6 @@ class FloriaApp extends StatelessWidget {
           theme: AppTheme.light,
           darkTheme: AppTheme.dark,
           themeMode: kDarkModeReady ? ThemeMode.system : ThemeMode.light,
-          // Si ya hay tareas guardadas, se salta la bienvenida y entra directo.
-          // Flujo: Bienvenida -> Tareas / Enfoque / Historial (+ Nueva tarea) -> Ajustes
-          // Si había una sesión en curso, se retoma al abrir la app (R5).
           home: activeSession != null
               ? MainShell(resumeSession: activeSession)
               : taskRepository.tasks.isEmpty

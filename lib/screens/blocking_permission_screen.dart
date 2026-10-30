@@ -4,11 +4,6 @@ import '../theme/app_palette.dart';
 import '../theme/app_spacing.dart';
 import '../widgets/common/app_card.dart';
 
-/// Explica y activa el permiso de bloqueo (Servicio de Accesibilidad de Android).
-///
-/// Se abre desde Ajustes → Permisos de bloqueo, o al iniciar una sesión sin el
-/// permiso activado ([fromSession] = true). En ese caso, cuando el permiso queda
-/// activo aparece "Continuar con la sesión", que devuelve `true`.
 class BlockingPermissionScreen extends StatefulWidget {
   final bool fromSession;
 
@@ -37,7 +32,6 @@ class _BlockingPermissionScreenState extends State<BlockingPermissionScreen>
     super.dispose();
   }
 
-  // Al volver de los ajustes de Android, revisar si ya se activó
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) _refresh();

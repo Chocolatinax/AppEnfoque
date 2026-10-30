@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_palette.dart';
 
-/// Encabezado compartido por las pestañas principales (Tareas, Enfoque, Historial):
-/// título + indicador "Sin internet · datos en tu teléfono" + botón de Ajustes.
 class EnfoqueAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
   final VoidCallback? onSettingsTap;
@@ -57,7 +55,6 @@ class EnfoqueAppBar extends StatelessWidget implements PreferredSizeWidget {
   }
 }
 
-/// Botón de engranaje que abre Ajustes (área táctil de 48 dp y etiqueta para lectores).
 class SettingsButton extends StatelessWidget {
   final VoidCallback? onTap;
 

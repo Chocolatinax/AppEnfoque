@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_palette.dart';
 
-/// Muestra un aviso flotante (SnackBar) con el estilo de la app.
-/// Los colores salen del tema, así funciona en modo claro y oscuro.
 void showAppSnackBar(
   BuildContext context,
   String message, {
@@ -11,7 +9,6 @@ void showAppSnackBar(
 }) {
   final p = context.palette;
   final messenger = ScaffoldMessenger.of(context);
-  // Error: fondo de error suave con texto oscuro (contraste AA en claro y oscuro)
   final backgroundColor = isError ? p.errorContainer : null;
   final foreground = isError ? p.onErrorContainer : p.inverseOnSurface;
 

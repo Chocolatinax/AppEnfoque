@@ -17,21 +17,7 @@ import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
-/**
- * Actividad principal de Floria.
- *
- * Expone el canal "floria/app_blocker" para que Flutter controle el bloqueo:
- * - isServiceEnabled: ¿el usuario activó el Servicio de Accesibilidad de Floria?
- * - openAccessibilitySettings: abre los ajustes de Accesibilidad de Android.
- * - startBlocking(packages, windows): bloquea esas apps dentro del horario de enfoque.
- * - stopBlocking: deja de bloquear (descansos, pausas o fin de la sesión).
- * - getLaunchableApps: lista las apps instaladas que se pueden abrir desde el menú.
- * - consumePendingBlockedApp: aviso guardado si Floria estaba cerrada cuando se abrió una app bloqueada.
- *
- * Y avisa a Flutter con "blockedAppOpened" cuando el servicio detecta una app bloqueada.
- */
 class MainActivity : FlutterActivity() {
-
     companion object {
         const val CHANNEL = "floria/app_blocker"
         const val EXTRA_BLOCKED_PACKAGE = "floria.blocked_package"
@@ -40,7 +26,6 @@ class MainActivity : FlutterActivity() {
 
     private var channel: MethodChannel? = null
 
-    /** Aviso que llegó con Floria cerrada (Flutter todavía no estaba listo para recibirlo). */
     private var pendingBlockedApp: Map<String, Any>? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -58,7 +43,6 @@ class MainActivity : FlutterActivity() {
                     }
                     "startBlocking" -> {
                         val packages = call.argument<List<String>>("packages") ?: emptyList()
-                        // Horario de los bloques de enfoque: [inicio1, fin1, inicio2, fin2, ...]
                         val windows = call.argument<List<Number>>("windows")?.map { it.toLong() } ?: emptyList()
                         BlockerState.start(this@MainActivity, packages, windows)
                         result.success(null)
@@ -72,7 +56,6 @@ class MainActivity : FlutterActivity() {
                         pendingBlockedApp = null
                     }
                     "getLaunchableApps" -> {
-                        // Leer íconos de muchas apps toma tiempo: se hace fuera del hilo principal
                         Thread {
                             val apps = loadLaunchableApps()
                             runOnUiThread { result.success(apps) }
@@ -86,17 +69,13 @@ class MainActivity : FlutterActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        setIntent(intent) // que getIntent() devuelva el intent más reciente
-        // Floria ya estaba abierta: avisar a Flutter de inmediato
+        setIntent(intent)
         blockedAppFrom(intent)?.let { channel?.invokeMethod("blockedAppOpened", it) }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Floria estaba cerrada: Flutter todavía no escucha, así que el aviso se guarda
-        // y la sesión lo pide al retomarse (consumePendingBlockedApp).
-        // Si Android VUELVE A CREAR la pantalla (cerró el proceso, o se abrió desde
-        // Recientes), el intent es el viejo: ese aviso ya no vale y se ignora.
+        // si Android recrea la activity, el intent es el viejo y no cuenta
         val recreated = savedInstanceState != null ||
             (intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) != 0
         pendingBlockedApp = if (recreated) null else blockedAppFrom(intent)
@@ -109,20 +88,15 @@ class MainActivity : FlutterActivity() {
         return mapOf("package" to pkg, "detectedAt" to detectedAt)
     }
 
-    /**
-     * Apps que aparecen en el menú de apps del teléfono (las únicas que tiene sentido bloquear).
-     * La pantalla de inicio, el teclado y las partes internas del sistema no aparecen aquí,
-     * así que nunca se pueden bloquear por accidente.
-     */
     private fun loadLaunchableApps(): List<Map<String, Any>> {
         val pm = packageManager
         val launcherIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
         val essentials = essentialPackages()
-        val protected = ProtectedApps.packages(this) // Ajustes y Teléfono: nunca se bloquean
+        val protected = ProtectedApps.packages(this)
 
         return pm.queryIntentActivities(launcherIntent, 0)
             .distinctBy { it.activityInfo.packageName }
-            .filter { it.activityInfo.packageName != packageName } // nunca bloquear a Floria
+            .filter { it.activityInfo.packageName != packageName }
             .filter { it.activityInfo.packageName !in protected }
             .map { info ->
                 val pkg = info.activityInfo.packageName
@@ -136,15 +110,9 @@ class MainActivity : FlutterActivity() {
             .sortedBy { (it["name"] as String).lowercase() }
     }
 
-    /**
-     * Apps esenciales: el atajo "Todas" no las marca (teléfono, mensajes, ajustes, reloj, contactos).
-     *
-     * En vez de una lista fija de paquetes (que cambia según la marca: Samsung, Xiaomi...),
-     * se le pregunta a Android qué app abre cada cosa en ESTE teléfono.
-     */
+    // Cada marca usa paquetes distintos, así que le preguntamos a Android
     private fun essentialPackages(): Set<String> {
         val set = mutableSetOf(
-            // Respaldo por si alguna consulta no responde
             "com.android.settings", "com.android.emergency",
             "com.google.android.dialer", "com.google.android.apps.messaging",
             "com.google.android.deskclock", "com.google.android.contacts"
@@ -153,10 +121,10 @@ class MainActivity : FlutterActivity() {
         Telephony.Sms.getDefaultSmsPackage(this)?.let { set.add(it) }
 
         val intents = listOf(
-            Intent(Settings.ACTION_SETTINGS),                 // Ajustes
-            Intent(AlarmClock.ACTION_SHOW_ALARMS),            // Reloj
-            Intent(Intent.ACTION_DIAL),                       // Teléfono
-            Intent(Intent.ACTION_VIEW, ContactsContract.Contacts.CONTENT_URI) // Contactos
+            Intent(Settings.ACTION_SETTINGS),
+            Intent(AlarmClock.ACTION_SHOW_ALARMS),
+            Intent(Intent.ACTION_DIAL),
+            Intent(Intent.ACTION_VIEW, ContactsContract.Contacts.CONTENT_URI)
         )
         for (intent in intents) {
             packageManager.queryIntentActivities(intent, 0)
@@ -176,7 +144,6 @@ class MainActivity : FlutterActivity() {
         return out.toByteArray()
     }
 
-    /** Revisa en los ajustes del sistema si el servicio de Floria está activado. */
     private fun isBlockerServiceEnabled(): Boolean {
         val expected = ComponentName(this, BlockerAccessibilityService::class.java)
         val enabled = Settings.Secure.getString(

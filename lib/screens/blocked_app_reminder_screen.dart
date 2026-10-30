@@ -5,11 +5,6 @@ import '../theme/app_palette.dart';
 import '../theme/app_spacing.dart';
 import '../widgets/common/app_card.dart';
 
-/// Pantalla de recordatorio (requerimiento R1).
-///
-/// Aparece cuando el usuario abre una app bloqueada durante una sesión de enfoque.
-/// Si mientras está abierta intenta abrir OTRA app bloqueada, se actualiza con el
-/// nombre de la nueva ([event] cambia). Los minutos restantes se actualizan en vivo.
 class BlockedAppReminderScreen extends StatefulWidget {
   final ValueListenable<BlockedAppEvent> event;
   final ValueListenable<int> secondsLeft;
@@ -45,7 +40,6 @@ class _BlockedAppReminderScreenState extends State<BlockedAppReminderScreen> {
     super.dispose();
   }
 
-  /// Evidencia para R1: tiempo entre que se detectó la app y que se ve esta pantalla.
   void _measureLatency() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final event = widget.event.value;
@@ -125,7 +119,6 @@ class _BlockedAppReminderScreenState extends State<BlockedAppReminderScreen> {
                 ),
                 if (_latencyMs != null) ...[
                   const SizedBox(height: AppSpacing.lg),
-                  // Solo en modo debug, como evidencia para las pruebas de R1
                   Text('Modo debug · mostrado en $_latencyMs ms',
                       style: t.bodySmall),
                 ],

@@ -4,32 +4,21 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import '../data/blockable_apps.dart';
 
-/// Aviso del código nativo: el usuario abrió una app bloqueada.
 class BlockedAppEvent {
   final String packageName;
   final DateTime detectedAt;
 
   const BlockedAppEvent(this.packageName, this.detectedAt);
 
-  /// Un aviso pendiente solo vale si es reciente y de esta sesión.
-  ///
-  /// Si Android cierra Floria y la vuelve a crear, puede entregar un aviso viejo:
-  /// sin este filtro, una sesión nueva mostraría "YouTube está bloqueada" sin que
-  /// el usuario la haya abierto.
   bool isFresh({required DateTime now, required DateTime sessionStart}) {
     final age = now.difference(detectedAt);
     return age <= maxPendingAge && !detectedAt.isBefore(sessionStart);
   }
 
-  /// Margen para que Floria arranque desde cero en teléfonos lentos.
   static const Duration maxPendingAge = Duration(seconds: 10);
 }
 
-/// Puente entre Flutter y el bloqueo nativo de Android (Kotlin).
-///
-/// Usa el platform channel "floria/app_blocker" (ver MainActivity.kt).
-/// En iOS (y en las pruebas) no hace nada: el bloqueo solo existe en Android,
-/// que es la plataforma definida en el alcance del proyecto.
+// Puente con el código Kotlin (canal floria/app_blocker). En iOS no hace nada.
 class AppBlocker {
   AppBlocker._() {
     if (isSupported) _channel.setMethodCallHandler(_onNativeCall);
@@ -42,13 +31,10 @@ class AppBlocker {
   final StreamController<BlockedAppEvent> _events =
       StreamController<BlockedAppEvent>.broadcast();
 
-  /// Se emite cada vez que el usuario intenta abrir una app bloqueada.
   Stream<BlockedAppEvent> get blockedAppOpened => _events.stream;
 
-  /// El bloqueo solo funciona en Android.
   bool get isSupported => !kIsWeb && Platform.isAndroid;
 
-  /// ¿El usuario activó el Servicio de Accesibilidad de Floria?
   Future<bool> isEnabled() async {
     if (!isSupported) return false;
     try {
@@ -60,8 +46,6 @@ class AppBlocker {
 
   List<InstalledApp>? _cachedApps;
 
-  /// Apps instaladas que se pueden bloquear, ordenadas por nombre.
-  /// Fuera de Android devuelve el catálogo de apps conocidas.
   Future<List<InstalledApp>> getLaunchableApps({bool refresh = false}) async {
     if (!isSupported) return BlockableApps.catalogAsInstalled;
     if (_cachedApps != null && !refresh) return _cachedApps!;
@@ -85,14 +69,8 @@ class AppBlocker {
     }
   }
 
-  /// Abre los ajustes de Accesibilidad de Android.
   Future<void> openSettings() => _call('openAccessibilitySettings');
 
-  /// Bloquea los [packages] solo dentro de los horarios de enfoque [windows] (inicio, fin).
-  ///
-  /// Android guarda el horario completo: aunque Floria se cierre, cada ronda de
-  /// Pomodoro bloquea a su hora y los descansos quedan libres. Al terminar el último
-  /// bloque, el bloqueo se libera solo.
   Future<void> start(List<String> packages,
           {required List<(DateTime, DateTime)> windows}) =>
       _call('startBlocking', {
@@ -105,7 +83,6 @@ class AppBlocker {
         ],
       });
 
-  /// Aviso de app bloqueada que llegó mientras Floria estaba cerrada (o null).
   Future<BlockedAppEvent?> consumePendingBlockedApp() async {
     if (!isSupported) return null;
     try {
@@ -121,7 +98,6 @@ class AppBlocker {
     }
   }
 
-  /// Deja de bloquear (descanso, pausa de emergencia o fin de la sesión).
   Future<void> stop() => _call('stopBlocking');
 
   Future<void> _call(String method, [Map<String, Object?>? args]) async {

@@ -11,8 +11,6 @@ import 'legal_screen.dart';
 import 'blocking_permission_screen.dart';
 import 'welcome_screen.dart';
 
-/// Ajustes de la app (antes "Perfil de invitado").
-/// Floria no tiene cuentas: aquí solo hay permisos, datos locales e información.
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
@@ -41,7 +39,6 @@ class SettingsScreen extends StatelessWidget {
 
     if (confirmed != true || !context.mounted) return;
 
-    // Borra las tareas y sesiones de SQLite
     await SessionScope.read(context)?.clearAll();
     if (!context.mounted) return;
     await TaskScope.read(context)?.clearAll();
@@ -65,7 +62,6 @@ class SettingsScreen extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(AppSpacing.screen, AppSpacing.sm,
             AppSpacing.screen, AppSpacing.xxl),
         children: [
-          // Aviso de privacidad local
           AppCard(
             color: p.primaryFixed,
             child: Row(
@@ -91,7 +87,6 @@ class SettingsScreen extends StatelessWidget {
               ],
             ),
           ),
-
           const _SectionLabel('Sesiones de enfoque'),
           _SettingsGroup(children: [
             _SettingsTile(
@@ -122,11 +117,9 @@ class SettingsScreen extends StatelessWidget {
                 );
               },
             ),
-            // Solo Android: en iOS los avisos ya llegan a la hora exacta
             if (NotificationService.instance.supportsExactAlarms)
               const _ExactAlarmTile(),
           ]),
-
           const _SectionLabel('Tus datos'),
           _SettingsGroup(children: [
             _SettingsTile(
@@ -137,7 +130,6 @@ class SettingsScreen extends StatelessWidget {
               onTap: () => _confirmReset(context),
             ),
           ]),
-
           const _SectionLabel('Floria'),
           _SettingsGroup(children: [
             _SettingsTile(
@@ -240,7 +232,6 @@ class _SettingsTile extends StatelessWidget {
   }
 }
 
-/// "Avisos a tiempo": muestra si el permiso de alarmas exactas está activo y permite activarlo.
 class _ExactAlarmTile extends StatefulWidget {
   const _ExactAlarmTile();
 
@@ -265,7 +256,6 @@ class _ExactAlarmTileState extends State<_ExactAlarmTile>
     super.dispose();
   }
 
-  // Al volver de los ajustes de Android, actualizar el estado
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) _refresh();

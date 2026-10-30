@@ -1,4 +1,3 @@
-/// Resultado que el usuario declara al terminar una sesión.
 class GoalResult {
   GoalResult._();
   static const String yes = 'si';
@@ -13,25 +12,22 @@ class GoalResult {
       };
 }
 
-/// Estado final de una sesión.
 class SessionStatus {
   SessionStatus._();
   static const String completed = 'completada';
   static const String abandoned = 'abandonada';
 }
 
-/// Una sesión de enfoque registrada en el historial (requerimiento R2:
-/// fecha, duración, tarea asociada y si se completó o se abandonó).
 class FocusSession {
   final String id;
   final String? taskId;
   final String taskTitle;
   final int plannedMinutes;
-  final int focusSeconds; // tiempo real de enfoque (sin pausas ni descansos)
+  final int focusSeconds;
   final DateTime startedAt;
   final DateTime endedAt;
-  final String status; // SessionStatus
-  final String? goalResult; // GoalResult (solo si se completó)
+  final String status;
+  final String? goalResult;
 
   const FocusSession({
     required this.id,

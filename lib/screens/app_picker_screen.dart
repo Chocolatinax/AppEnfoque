@@ -3,13 +3,6 @@ import '../data/blockable_apps.dart';
 import '../theme/app_palette.dart';
 import '../theme/app_spacing.dart';
 
-/// Elegir qué apps bloquear durante la sesión.
-///
-/// Muestra las apps instaladas (en Android) con buscador y dos atajos:
-/// - Recomendadas: redes sociales instaladas.
-/// - Todas: todas menos las esenciales (mensajes, reloj, contactos).
-///
-/// Devuelve el conjunto de paquetes elegidos al tocar "Listo".
 class AppPickerScreen extends StatefulWidget {
   final List<InstalledApp> apps;
   final Set<String> initialSelection;
@@ -31,8 +24,6 @@ class _AppPickerScreenState extends State<AppPickerScreen> {
     return widget.apps.where((a) => a.name.toLowerCase().contains(q)).toList();
   }
 
-  /// Último atajo tocado: si dos atajos llegaran a marcar lo mismo,
-  /// se sombrea el que tocó el usuario.
   String? _lastPreset;
 
   void _selectRecommended() => setState(() {
@@ -59,7 +50,6 @@ class _AppPickerScreenState extends State<AppPickerScreen> {
   Set<String> get _allSet =>
       widget.apps.where((a) => !a.essential).map((a) => a.packageName).toSet();
 
-  /// Qué atajo coincide con la selección actual (null = selección personalizada).
   String? get _activePreset {
     bool same(Set<String> other) =>
         _selected.length == other.length && _selected.containsAll(other);
@@ -69,7 +59,6 @@ class _AppPickerScreenState extends State<AppPickerScreen> {
     return null;
   }
 
-  /// Atajo que se ve sombreado cuando la selección coincide con él.
   Widget _presetChip(
       String label, IconData icon, VoidCallback onTap, AppPalette p) {
     final active = _activePreset == label;

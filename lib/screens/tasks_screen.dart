@@ -12,11 +12,6 @@ import 'session_launcher.dart';
 import '../data/daily_phrases.dart';
 import 'main_shell.dart';
 
-/// Pantalla de inicio: Tareas.
-///
-/// Diseño minimalista con una sola acción principal ("Iniciar enfoque" en la
-/// siguiente tarea). Cada sesión siempre va ligada a una tarea (ficha del proyecto),
-/// y se inicia en 2 toques desde aquí (requerimiento R4: menos de 5 toques).
 class TasksScreen extends StatefulWidget {
   final ValueChanged<int> onNavigate;
   final VoidCallback onOpenSettings;
@@ -37,20 +32,17 @@ class _TasksScreenState extends State<TasksScreen> {
 
   void _startSession(Task task) => launchFocusSession(context, task);
 
-  /// Abre el formulario con los datos de la tarea para editarla.
   void _editTask(Task task) {
     Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => TaskFormScreen(initialTask: task)),
     );
   }
 
-  /// Pide confirmación, borra la tarea y ofrece "Deshacer".
   Future<void> _deleteTask(Task task) async {
     if (!await confirmDeleteTask(context, task)) return;
     if (mounted) await deleteTaskWithUndo(context, task);
   }
 
-  // ---------- Saludo y fecha en español ----------
   static const _weekdays = [
     'lunes',
     'martes',
@@ -93,8 +85,6 @@ class _TasksScreenState extends State<TasksScreen> {
     final p = context.palette;
     final t = Theme.of(context).textTheme;
 
-    // Las tareas vienen de SQLite a través del repositorio.
-    // TaskScope.of hace que esta pantalla se redibuje cuando cambian.
     final repo = TaskScope.of(context);
     final all = repo.tasks;
     final pendingCount = repo.pendingTasks.length;
@@ -106,7 +96,6 @@ class _TasksScreenState extends State<TasksScreen> {
     return Scaffold(
       appBar:
           EnfoqueAppBar(title: 'Tareas', onSettingsTap: widget.onOpenSettings),
-      // El botón "Nueva tarea" está en MainShell (ver ahí por qué)
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
             AppSpacing.screen, AppSpacing.sm, AppSpacing.screen, 112),
@@ -116,7 +105,6 @@ class _TasksScreenState extends State<TasksScreen> {
           Text(_todayText,
               style: t.bodyMedium!.copyWith(color: p.onSurfaceVariant)),
           const SizedBox(height: AppSpacing.md),
-          // Frase motivacional del día (cambia según el día de la semana)
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -204,7 +192,6 @@ class _TasksScreenState extends State<TasksScreen> {
   }
 }
 
-/// Tarjeta destacada: la tarea más importante pendiente y el botón principal.
 class _NextTaskCard extends StatelessWidget {
   final Task task;
   final VoidCallback onStart;
@@ -255,7 +242,6 @@ class _NextTaskCard extends StatelessWidget {
   }
 }
 
-/// Primera vez que se abre la app: invitación a crear la primera tarea.
 class _EmptyTasksCard extends StatelessWidget {
   final VoidCallback onCreate;
 
@@ -323,7 +309,6 @@ class _AllDoneCard extends StatelessWidget {
 
 enum _TaskAction { edit, delete }
 
-/// Fila de tarea: casilla para marcarla, datos básicos y botón para iniciar enfoque.
 class _TaskTile extends StatelessWidget {
   final Task task;
   final bool done;
@@ -350,7 +335,6 @@ class _TaskTile extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(4, 8, 4, 8),
       child: Row(
         children: [
-          // Checkbox de Material: área táctil de 48 dp y estado anunciado al lector
           Semantics(
             label: done
                 ? 'Desmarcar ${task.title}'
@@ -391,7 +375,6 @@ class _TaskTile extends StatelessWidget {
               tooltip: 'Iniciar enfoque: ${task.title}',
               icon: Icon(Icons.play_circle_outline, color: p.primary, size: 28),
             ),
-          // Menú ⋮ con Editar y Eliminar (visible, conocido y accesible)
           PopupMenuButton<_TaskAction>(
             tooltip: 'Más opciones: ${task.title}',
             icon: Icon(Icons.more_vert, color: p.onSurfaceVariant),

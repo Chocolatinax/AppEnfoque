@@ -14,20 +14,9 @@ import '../utils/ui_feedback.dart';
 import '../widgets/common/app_card.dart';
 import 'blocked_app_reminder_screen.dart';
 
-/// Sesión de enfoque en curso.
-///
-/// - Tiempo libre: un solo bloque de enfoque.
-/// - Pomodoro: rondas de 25 min con 5 min de descanso (25 min después de la 4.ª ronda).
-///
-/// El tiempo se calcula con [SessionClock] a partir de horas reales y la sesión se
-/// guarda en SQLite: si la app se cierra, al reabrirla se retoma con el tiempo real (R5).
-///
-/// No hay botón de volver: la única salida es terminar o abandonar.
-/// Al terminar pregunta si se cumplió el objetivo y guarda la sesión en el historial (R2).
 class ActiveSessionScreen extends StatefulWidget {
   final Task task;
 
-  /// Sesión guardada que se retoma al reabrir la app (null = sesión nueva).
   final ActiveSessionRecord? restored;
 
   const ActiveSessionScreen({super.key, required this.task, this.restored});
@@ -55,22 +44,18 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen>
   bool _ended = false;
   Timer? _timer;
 
-  // Bloqueo de apps (solo Android)
   StreamSubscription<BlockedAppEvent>? _blockedSub;
   bool _blockingActive = false;
   bool _reminderOpen = false;
-  ValueNotifier<BlockedAppEvent>?
-      _reminderEvent; // app que muestra el recordatorio abierto
+  ValueNotifier<BlockedAppEvent>? _reminderEvent;
   late final ValueNotifier<int> _secondsLeftNotifier =
       ValueNotifier(_secondsLeft);
   late final List<String> _blockedPackages = !widget.task.blockDistractions
       ? const []
       : widget.task.blockedPackages.isNotEmpty
           ? widget.task.blockedPackages
-          // Tareas creadas antes de guardar paquetes: traducir los nombres del catálogo
           : BlockableApps.packagesFor(widget.task.blockedApps);
 
-  /// Nombre visible de una app bloqueada a partir de su paquete.
   String _appNameFor(String package) {
     final index = widget.task.blockedPackages.indexOf(package);
     if (index >= 0 && index < widget.task.blockedApps.length) {
@@ -84,7 +69,6 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen>
     duration: const Duration(seconds: 4),
   );
 
-  // Valores que usa la interfaz, calculados con el reloj
   List<SessionPhase> get _phases => _clock.phases;
   SessionPhase get _phase => _phases[_position.index];
   int get _secondsLeft => _position.secondsLeft;
@@ -102,21 +86,19 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen>
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
-      _persist(); // guardar la sesión desde el primer segundo
-      // Notificación de inicio: "Sesión de enfoque en curso · termina a las HH:MM"
+      _persist();
       NotificationService.instance.showSessionInProgress(
         widget.task,
         _clock.endsAt(DateTime.now()),
         update: widget.restored != null,
       );
-      NotificationService.instance
-          .cancelScheduled(); // estamos dentro de la app
+      NotificationService.instance.cancelScheduled();
       if (widget.restored != null) {
         showAppSnackBar(context, 'Retomamos tu sesión donde ibas',
             icon: Icons.history_rounded);
       }
-      _tick(); // si se terminó mientras la app estaba cerrada, cierra la sesión
-      // Si Floria se abrió porque intentaste abrir una app bloqueada, mostrar el recordatorio
+      _tick();
+      // Android a veces nos devuelve un aviso viejo al recrear la activity
       final pending = await AppBlocker.instance.consumePendingBlockedApp();
       if (pending != null &&
           pending.isFresh(
@@ -129,7 +111,7 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Accesibilidad: respetar "reducir movimiento" del sistema
+    // respetar "reducir movimiento"
     if (MediaQuery.of(context).disableAnimations) {
       _breath.stop();
     } else if (!_breath.isAnimating) {
@@ -142,16 +124,13 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen>
     WidgetsBinding.instance.removeObserver(this);
     _timer?.cancel();
     _blockedSub?.cancel();
-    // Solo se libera si la sesión terminó; si la app se cierra a mitad de sesión,
-    // Android sigue el horario de rondas por su cuenta
+    // si cierran la app a media sesión no paramos: Android sigue el horario solo
     if (_ended && _blockedPackages.isNotEmpty) AppBlocker.instance.stop();
     _secondsLeftNotifier.dispose();
     _breath.dispose();
     super.dispose();
   }
 
-  /// Al salir de la app se programan los avisos; al volver se cancelan
-  /// (adentro ya se ven los avisos de la pantalla) y se actualiza el tiempo.
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (_ended) return;
@@ -162,31 +141,24 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen>
         NotificationService.instance.scheduleSessionEvents(_clock, widget.task);
       case AppLifecycleState.resumed:
         NotificationService.instance.cancelScheduled();
-        _sendBlockingSchedule(); // corrige cualquier desfase del horario
+        _sendBlockingSchedule();
         _tick();
       case AppLifecycleState.detached:
         break;
     }
   }
 
-  // ---------- Lógica del temporizador ----------
-
-  /// Guarda el estado del reloj en SQLite (para retomar la sesión si la app se cierra).
   void _persist() {
     if (_ended) return;
     SessionScope.read(context)?.saveActive(
       ActiveSessionRecord.fromClock(_sessionId, widget.task.id, _clock),
     );
-    // La hora de fin puede cambiar (pausa o descanso saltado)
     NotificationService.instance.showSessionInProgress(
         widget.task, _clock.endsAt(DateTime.now()),
         update: true);
     _sendBlockingSchedule();
   }
 
-  /// Le pasa a Android el horario de los bloques de enfoque que faltan.
-  /// Así cada ronda bloquea a su hora aunque Floria esté cerrada, y los descansos
-  /// y la pausa de emergencia quedan libres.
   void _sendBlockingSchedule() {
     if (_ended || _blockedPackages.isEmpty) return;
     AppBlocker.instance
@@ -241,10 +213,6 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen>
     _tick();
   }
 
-  // ---------- Bloqueo de apps ----------
-
-  /// Se bloquea solo durante el enfoque; en descansos, pausas y al terminar se libera.
-  /// (Android lo hace solo con el horario; aquí se usa para la pantalla de recordatorio.)
   bool get _shouldBlock =>
       !_ended && _phase.isFocus && !_isPaused && _blockedPackages.isNotEmpty;
 
@@ -254,7 +222,6 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen>
     _blockingActive = should;
     if (!should) {
       if (_ended && _blockedPackages.isNotEmpty) AppBlocker.instance.stop();
-      // Si empieza un descanso o termina la sesión con el recordatorio abierto, se cierra solo
       if (_reminderOpen && mounted) {
         final sessionRoute = ModalRoute.of(context);
         Navigator.of(context).popUntil((route) => route == sessionRoute);
@@ -262,11 +229,9 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen>
     }
   }
 
-  /// El usuario abrió una app bloqueada: mostrar la pantalla de recordatorio (R1).
   Future<void> _onBlockedApp(BlockedAppEvent event) async {
     if (!mounted || !_blockingActive) return;
 
-    // Si el recordatorio ya está abierto, solo se actualiza con la app nueva
     if (_reminderOpen) {
       _reminderEvent?.value = event;
       return;
@@ -290,12 +255,10 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen>
     notifier.dispose();
   }
 
-  // ---------- Cierre de sesión ----------
-
   Future<void> _record(String status, {String? goalResult}) async {
     final sessions = SessionScope.read(context);
     await NotificationService.instance.cancelAll();
-    await sessions?.clearActive(); // ya no está en curso
+    await sessions?.clearActive();
     await sessions?.record(
       FocusSession(
         id: _sessionId,
@@ -323,7 +286,6 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen>
     await _record(SessionStatus.completed, goalResult: result);
     if (!mounted) return;
 
-    // Si cumplió su objetivo, la tarea se marca como hecha
     if (result == GoalResult.yes) {
       final tasks = TaskScope.read(context);
       final saved =
@@ -360,7 +322,6 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen>
     _ended = true;
     _timer?.cancel();
     _syncBlocking();
-    // Liberar ya el bloqueo (también las rondas que faltaban del horario)
     if (_blockedPackages.isNotEmpty) AppBlocker.instance.stop();
     await _record(SessionStatus.abandoned);
     if (!mounted) return;
@@ -370,15 +331,12 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen>
     Navigator.of(context).pop();
   }
 
-  // ---------- Interfaz ----------
-
   String _format(int seconds) {
     final m = (seconds ~/ 60).toString().padLeft(2, '0');
     final s = (seconds % 60).toString().padLeft(2, '0');
     return '$m:$s';
   }
 
-  /// Resumen corto: "Instagram y TikTok están bloqueadas" o "Instagram, TikTok y 7 más están bloqueadas".
   String get _blockedSummary {
     final names = widget.task.blockedApps;
     if (names.length == 1) return '${names.first} está bloqueada';
@@ -424,7 +382,6 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen>
                 AppSpacing.screen, AppSpacing.xl),
             child: Column(
               children: [
-                // Fase actual
                 Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -441,8 +398,6 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen>
                   ),
                 ),
                 const SizedBox(height: AppSpacing.xl),
-
-                // Círculo que "respira"
                 ScaleTransition(
                   scale: Tween(begin: 0.92, end: 1.0).animate(CurvedAnimation(
                       parent: _breath, curve: Curves.easeInOut)),
@@ -462,8 +417,6 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen>
                   ),
                 ),
                 const SizedBox(height: AppSpacing.xl),
-
-                // Temporizador (el lector de pantalla lo lee en palabras)
                 Semantics(
                   label: _secondsLeft <= 60
                       ? 'Queda menos de un minuto'
@@ -492,8 +445,6 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen>
                   style: t.bodyMedium!.copyWith(color: p.onSurfaceVariant),
                 ),
                 const SizedBox(height: AppSpacing.xl),
-
-                // Objetivo
                 AppCard(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -522,8 +473,6 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen>
                             ),
                           ],
                         ),
-                        // Una ventana flotante (imagen en imagen) no cuenta como abrir
-                        // la app, así que el bloqueo no la detecta
                         if (AppBlocker.instance.isSupported) ...[
                           const SizedBox(height: AppSpacing.xs),
                           Row(
@@ -546,8 +495,6 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen>
                   ),
                 ),
                 const SizedBox(height: AppSpacing.xl),
-
-                // Acciones
                 SizedBox(
                   width: double.infinity,
                   child: onBreak
@@ -586,7 +533,6 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen>
   }
 }
 
-/// Pregunta final: "¿Cumpliste tu objetivo?" (Sí / En parte / No).
 class _GoalResultDialog extends StatelessWidget {
   final String goal;
   const _GoalResultDialog({required this.goal});
@@ -596,7 +542,7 @@ class _GoalResultDialog extends StatelessWidget {
     final p = context.palette;
     final t = Theme.of(context).textTheme;
 
-    // Sin respuesta no se cierra: el botón Atrás no debe saltarse la pregunta (R2)
+    // que el botón atrás no se salte la pregunta
     return PopScope(
       canPop: false,
       child: AlertDialog(

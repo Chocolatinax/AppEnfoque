@@ -4,17 +4,12 @@ import '../models/session_clock.dart';
 import 'package:sqflite/sqflite.dart' show ConflictAlgorithm;
 import 'app_database.dart';
 
-/// Acceso a las sesiones de enfoque guardadas (historial).
-///
-/// Igual que [TaskRepository]: guarda en SQLite, mantiene una copia en memoria
-/// y avisa a la interfaz cuando hay cambios.
 class SessionRepository extends ChangeNotifier {
   final AppDatabase _database;
   List<FocusSession> _sessions = [];
 
   SessionRepository(this._database);
 
-  /// Sesiones de la más reciente a la más antigua.
   List<FocusSession> get sessions => List.unmodifiable(_sessions);
 
   Future<void> load() async {
@@ -24,7 +19,6 @@ class SessionRepository extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Registra una sesión terminada (completada o abandonada).
   Future<void> record(FocusSession session) async {
     await _database.db.insert('sessions', session.toDbMap());
     _sessions.insert(0, session);
@@ -32,12 +26,10 @@ class SessionRepository extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Sesiones que empezaron entre [from] (incluido) y [to] (excluido).
   List<FocusSession> between(DateTime from, DateTime to) => _sessions
       .where((s) => !s.startedAt.isBefore(from) && s.startedAt.isBefore(to))
       .toList();
 
-  /// Días seguidos (hasta hoy o ayer) con al menos una sesión completada.
   int currentStreak({DateTime? today}) {
     final now = today ?? DateTime.now();
     final days = _sessions
@@ -46,7 +38,6 @@ class SessionRepository extends ChangeNotifier {
         .toSet();
 
     var day = _dateOnly(now);
-    // Si hoy todavía no hay sesión, la racha sigue viva desde ayer.
     if (!days.contains(day)) day = day.subtract(const Duration(days: 1));
 
     var streak = 0;
@@ -57,17 +48,12 @@ class SessionRepository extends ChangeNotifier {
     return streak;
   }
 
-  /// Fecha sin hora (para comparar días).
   static DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
 
-  // ---------- Sesión en curso (R5) ----------
-
-  /// Guarda (o actualiza) la sesión en curso.
   Future<void> saveActive(ActiveSessionRecord record) =>
       _database.db.insert('active_session', record.toDbMap(),
           conflictAlgorithm: ConflictAlgorithm.replace);
 
-  /// Sesión que quedó en curso cuando se cerró la app (o null).
   Future<ActiveSessionRecord?> loadActive() async {
     final rows = await _database.db.query('active_session', limit: 1);
     return rows.isEmpty ? null : ActiveSessionRecord.fromDbMap(rows.first);
@@ -75,7 +61,6 @@ class SessionRepository extends ChangeNotifier {
 
   Future<void> clearActive() => _database.db.delete('active_session');
 
-  /// Borra el historial (Ajustes → Reiniciar datos).
   Future<void> clearAll() async {
     await _database.db.delete('active_session');
     await _database.db.delete('sessions');
@@ -84,7 +69,6 @@ class SessionRepository extends ChangeNotifier {
   }
 }
 
-/// Pone el [SessionRepository] a disposición de toda la app.
 class SessionScope extends InheritedNotifier<SessionRepository> {
   const SessionScope({
     super.key,
@@ -92,7 +76,6 @@ class SessionScope extends InheritedNotifier<SessionRepository> {
     required super.child,
   }) : super(notifier: repository);
 
-  /// Para usar en `build`: la pantalla se redibuja cuando cambian las sesiones.
   static SessionRepository of(BuildContext context) {
     final repo =
         context.dependOnInheritedWidgetOfExactType<SessionScope>()?.notifier;
@@ -101,7 +84,6 @@ class SessionScope extends InheritedNotifier<SessionRepository> {
     return repo!;
   }
 
-  /// Para usar dentro de botones y acciones (no en `build`).
   static SessionRepository? read(BuildContext context) =>
       context.getInheritedWidgetOfExactType<SessionScope>()?.notifier;
 }

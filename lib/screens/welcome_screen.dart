@@ -4,9 +4,6 @@ import '../theme/app_palette.dart';
 import '../theme/app_spacing.dart';
 import 'main_shell.dart';
 
-/// Pantalla de bienvenida.
-/// Minimalista: logo, una frase, tres beneficios y un solo botón "Empezar".
-/// (Sin login: la app es de uso individual, sin registro y 100% offline.)
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
 
@@ -36,7 +33,6 @@ class WelcomeScreen extends StatelessWidget {
               constraints: const BoxConstraints(maxWidth: 420),
               child: Column(
                 children: [
-                  // Logo
                   Image.asset(
                     Theme.of(context).brightness == Brightness.dark
                         ? 'assets/branding/floria_isotipo_claro.png'
@@ -55,8 +51,6 @@ class WelcomeScreen extends StatelessWidget {
                     style: t.bodyLarge!.copyWith(color: p.onSurfaceVariant),
                   ),
                   const SizedBox(height: 40),
-
-                  // Beneficios (lista simple, sin tarjetas)
                   const _Benefit(
                     icon: Icons.block_outlined,
                     title: 'Bloquea las apps que te distraen',
@@ -73,7 +67,6 @@ class WelcomeScreen extends StatelessWidget {
                     subtitle: 'Todo se guarda solo en tu teléfono.',
                   ),
                   const SizedBox(height: 40),
-
                   SizedBox(
                     width: double.infinity,
                     child: FilledButton(
@@ -82,8 +75,6 @@ class WelcomeScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: AppSpacing.xl),
-
-                  // Pie: enlaces legales
                   Wrap(
                     alignment: WrapAlignment.center,
                     crossAxisAlignment: WrapCrossAlignment.center,

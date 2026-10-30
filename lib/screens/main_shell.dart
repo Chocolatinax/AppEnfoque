@@ -9,25 +9,17 @@ import 'history_screen.dart';
 import 'settings_screen.dart';
 import 'tasks_screen.dart';
 
-/// Contenedor principal después de la bienvenida.
-/// Mantiene la barra inferior fija y cambia entre las 3 pestañas
-/// (Tareas, Enfoque, Historial). "Nueva tarea" se abre como pantalla aparte.
-/// Se usa IndexedStack para que cada pestaña conserve su estado
-/// (por ejemplo, el temporizador Pomodoro sigue corriendo al cambiar de pestaña).
 class MainShell extends StatefulWidget {
   final int initialIndex;
 
-  /// Sesión en curso que se retoma al abrir la app (R5).
   final ActiveSessionRecord? resumeSession;
 
   const MainShell({super.key, this.initialIndex = 0, this.resumeSession});
 
-  /// Índices de las pestañas, para no usar "números mágicos".
   static const int tabTareas = 0;
   static const int tabEnfoque = 1;
   static const int tabHistorial = 2;
 
-  /// No es una pestaña: pedir este índice abre el formulario "Nueva tarea".
   static const int tabNueva = -1;
 
   @override
@@ -42,7 +34,6 @@ class _MainShellState extends State<MainShell> {
     super.initState();
     final resume = widget.resumeSession;
     if (resume != null) {
-      // Abrir la sesión encima de Tareas, con el tiempo real transcurrido
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         final task = TaskScope.read(context)
@@ -85,9 +76,7 @@ class _MainShellState extends State<MainShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // El botón vive aquí (y no dentro de Tareas) porque los avisos de abajo,
-      // como "Tarea eliminada · Deshacer", se muestran en esta pantalla:
-      // así el botón sube mientras se ve el aviso y vuelve a bajar después
+      // El FAB va aquí y no en TasksScreen para que suba cuando sale un snackbar
       floatingActionButton: _currentIndex == MainShell.tabTareas
           ? FloatingActionButton.extended(
               onPressed: _openNewTask,

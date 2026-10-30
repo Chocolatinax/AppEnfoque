@@ -3,12 +3,6 @@ import 'package:flutter/services.dart';
 import 'app_palette.dart';
 import 'app_spacing.dart';
 
-/// Temas claro y oscuro de Floria, construidos a partir de [AppPalette].
-///
-/// Reglas de accesibilidad aplicadas aquí:
-/// - Ningún estilo de texto del tema es menor a 12 sp.
-/// - Botones con altura mínima de 48 dp.
-/// - Colores con contraste AA en ambos modos.
 class AppTheme {
   AppTheme._();
 
@@ -70,7 +64,6 @@ class AppTheme {
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        // Íconos de la barra de estado legibles en ambos modos
         systemOverlayStyle: brightness == Brightness.light
             ? SystemUiOverlayStyle.dark
                 .copyWith(statusBarColor: Colors.transparent)
@@ -133,7 +126,6 @@ class AppTheme {
         backgroundColor: p.primary,
         foregroundColor: p.onPrimary,
         elevation: 2,
-        // Bordes redondeados (no círculo) para que también funcione el botón con texto
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadius.lg)),
       ),
@@ -194,8 +186,6 @@ class AppTheme {
         backgroundColor: p.inverseSurface,
         contentTextStyle:
             textTheme.bodyMedium!.copyWith(color: p.inverseOnSurface),
-        // Fijo (a todo lo ancho, encima de la barra de navegación): así el botón
-        // "Nueva tarea" sube mientras se ve el aviso, en vez de quedar tapado
         behavior: SnackBarBehavior.fixed,
       ),
       dialogTheme: DialogThemeData(
@@ -227,7 +217,6 @@ class AppTheme {
     );
   }
 
-  /// Escala tipográfica: nada menor a 12 sp.
   static TextTheme _textTheme(AppPalette p) {
     return TextTheme(
       displaySmall: TextStyle(

@@ -3,7 +3,6 @@ import '../../data/task_repository.dart';
 import '../../models/task_model.dart';
 import '../../theme/app_palette.dart';
 
-/// Pregunta antes de borrar una tarea.
 Future<bool> confirmDeleteTask(BuildContext context, Task task) async {
   final p = context.palette;
   final confirmed = await showDialog<bool>(
@@ -28,11 +27,9 @@ Future<bool> confirmDeleteTask(BuildContext context, Task task) async {
   return confirmed == true;
 }
 
-/// Borra la tarea y muestra "Tarea eliminada" con la opción de deshacer.
 Future<void> deleteTaskWithUndo(BuildContext context, Task task) async {
   final repo = TaskScope.read(context);
   if (repo == null) return;
-  // Se guardan antes de cerrar pantallas, porque el context puede dejar de existir
   final messenger = ScaffoldMessenger.of(context);
   final p = context.palette;
 
@@ -51,7 +48,7 @@ Future<void> deleteTaskWithUndo(BuildContext context, Task task) async {
         textColor: p.primaryFixed,
         onPressed: () => repo.add(task),
       ),
-      // Con botón, Flutter lo deja fijo si no se indica lo contrario
+      // con action el snackbar no se cierra solo si no ponemos esto
       persist: false,
       duration: const Duration(seconds: 6),
     ),

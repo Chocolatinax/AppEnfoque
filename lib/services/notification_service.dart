@@ -6,7 +6,6 @@ import 'package:timezone/timezone.dart' as tz;
 import '../models/session_clock.dart';
 import '../models/task_model.dart';
 
-/// Un aviso programado de la sesión.
 class PlannedNotification {
   final DateTime at;
   final String title;
@@ -15,12 +14,6 @@ class PlannedNotification {
   const PlannedNotification(this.at, this.title, this.body);
 }
 
-/// Notificaciones locales de Floria (sin servidor: todo ocurre en el teléfono).
-///
-/// - Al iniciar una sesión: "Sesión de enfoque en curso" (fija en Android).
-/// - Mientras la app está cerrada o en segundo plano: avisos al terminar cada
-///   ronda, cada descanso, la pausa de emergencia y la sesión completa.
-/// - Al terminar o abandonar: se borran todas.
 class NotificationService {
   NotificationService._();
   static final NotificationService instance = NotificationService._();
@@ -41,7 +34,6 @@ class NotificationService {
       await _plugin.initialize(
         settings: const InitializationSettings(
           android: AndroidInitializationSettings('@mipmap/ic_launcher'),
-          // El permiso se pide al iniciar la primera sesión, no al abrir la app
           iOS: DarwinInitializationSettings(
             requestAlertPermission: false,
             requestBadgePermission: false,
@@ -55,7 +47,6 @@ class NotificationService {
     }
   }
 
-  /// Pide el permiso de notificaciones (Android 13+ e iOS). Devuelve si quedó activado.
   Future<bool> requestPermission() async {
     if (!_ready) return false;
     try {
@@ -76,17 +67,12 @@ class NotificationService {
     }
   }
 
-  // ---------- Alarmas exactas (solo Android) ----------
-
-  /// Android 12+ pide el permiso "Alarmas y recordatorios" para avisar a la hora exacta.
-  /// En iOS no existe: los avisos ya llegan a tiempo.
   bool get supportsExactAlarms => isSupported && Platform.isAndroid;
 
   AndroidFlutterLocalNotificationsPlugin? get _android =>
       _plugin.resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin>();
 
-  /// ¿Los avisos pueden llegar a la hora exacta?
   Future<bool> canScheduleExact() async {
     if (!_ready || !supportsExactAlarms) return false;
     try {
@@ -96,7 +82,6 @@ class NotificationService {
     }
   }
 
-  /// Abre el ajuste "Alarmas y recordatorios" de Floria. Devuelve si quedó activado.
   Future<bool> requestExactAlarms() async {
     if (!_ready || !supportsExactAlarms) return false;
     try {
@@ -105,14 +90,10 @@ class NotificationService {
     return canScheduleExact();
   }
 
-  // ---------- Notificaciones de la sesión ----------
-
-  /// "Sesión de enfoque en curso · Termina a las HH:MM".
-  /// En Android queda fija; con [update] solo se actualiza la hora (sin sonar de nuevo).
   Future<void> showSessionInProgress(Task task, DateTime endsAt,
       {bool update = false}) async {
     if (!_ready) return;
-    if (update && Platform.isIOS) return; // en iOS no hay notificaciones fijas
+    if (update && Platform.isIOS) return;
     try {
       await _plugin.show(
         id: _ongoingId,
@@ -138,13 +119,13 @@ class NotificationService {
     }
   }
 
-  /// Programa los avisos que faltan de la sesión (se llama al salir de la app).
   Future<void> scheduleSessionEvents(SessionClock clock, Task task) async {
     if (!_ready) return;
     await cancelScheduled();
     final events = planSessionEvents(clock, task, DateTime.now());
     if (events.isEmpty) return;
 
+    // sin el permiso de alarmas exactas Android atrasa los avisos varios minutos
     var mode = AndroidScheduleMode.inexactAllowWhileIdle;
     try {
       final exact = await _plugin
@@ -181,7 +162,6 @@ class NotificationService {
     }
   }
 
-  /// Cancela los avisos programados (se llama al volver a la app).
   Future<void> cancelScheduled() async {
     if (!_ready) return;
     try {
@@ -189,7 +169,6 @@ class NotificationService {
     } catch (_) {}
   }
 
-  /// Borra todo: la notificación fija y los avisos (al terminar o abandonar).
   Future<void> cancelAll() async {
     if (!_ready) return;
     try {
@@ -197,9 +176,6 @@ class NotificationService {
     } catch (_) {}
   }
 
-  // ---------- Cálculo de los avisos (función pura, con pruebas) ----------
-
-  /// Qué avisos faltan y a qué hora, según el reloj de la sesión.
   static List<PlannedNotification> planSessionEvents(
       SessionClock clock, Task task, DateTime now) {
     final position = clock.position(now);
@@ -207,7 +183,6 @@ class NotificationService {
 
     final phases = clock.phases;
     final events = <PlannedNotification>[];
-    // Si está en pausa, todo se corre lo que falte de la pausa
     var time = now.add(Duration(seconds: clock.pauseSecondsLeft(now)));
     if (clock.isPaused(now)) {
       events.add(PlannedNotification(

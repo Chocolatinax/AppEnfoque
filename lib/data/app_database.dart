@@ -1,19 +1,6 @@
 import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart';
 
-/// Base de datos local de Floria (SQLite).
-///
-/// Todo vive en el teléfono: no hay servidor ni sincronización (ver ficha del proyecto).
-///
-/// Tablas:
-/// - `tasks`: tareas creadas por el usuario (tiempo libre o Pomodoro).
-/// - `sessions`: sesiones de enfoque completadas o abandonadas, para el historial (R2).
-///
-/// Versiones:
-/// - v1: tablas iniciales.
-/// - v2: modo de tiempo (libre / Pomodoro) en tareas y tiempo real de enfoque en sesiones.
-/// - v3: paquetes de Android de las apps bloqueadas (cualquier app instalada).
-/// - v4: tabla `active_session` para retomar una sesión si se cierra la app (R5).
 class AppDatabase {
   static const String fileName = 'floria.db';
   static const int version = 4;
@@ -22,9 +9,6 @@ class AppDatabase {
 
   AppDatabase._(this.db);
 
-  /// Abre (o crea) la base de datos.
-  ///
-  /// [factory] y [path] solo se usan en las pruebas para abrir una base en memoria.
   static Future<AppDatabase> open(
       {DatabaseFactory? factory, String? path}) async {
     final dbFactory = factory ?? databaseFactory;
@@ -42,7 +26,6 @@ class AppDatabase {
     return AppDatabase._(db);
   }
 
-  /// Instalación nueva: crea el esquema completo de la última versión.
   static Future<void> _onCreate(Database db, int version) async {
     await db.execute('''
       CREATE TABLE tasks (
@@ -79,7 +62,6 @@ class AppDatabase {
     await db.execute(
         'CREATE INDEX idx_sessions_started_at ON sessions(started_at)');
 
-    // Sesión en curso (una sola fila): permite retomarla al reabrir la app (R5)
     await db.execute('''
       CREATE TABLE active_session (
         id                INTEGER PRIMARY KEY CHECK (id = 1),
@@ -93,9 +75,9 @@ class AppDatabase {
     ''');
   }
 
-  /// Actualiza una base existente sin perder datos.
   static Future<void> _onUpgrade(
       Database db, int oldVersion, int newVersion) async {
+    // v2: pomodoro, v3: paquetes de apps, v4: sesión en curso
     if (oldVersion < 2) {
       await db.execute(
           "ALTER TABLE tasks ADD COLUMN timer_mode TEXT NOT NULL DEFAULT 'libre'");

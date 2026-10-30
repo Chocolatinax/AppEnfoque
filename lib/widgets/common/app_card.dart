@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import '../../theme/app_palette.dart';
 import '../../theme/app_spacing.dart';
 
-/// Tarjeta base de Floria: fondo de superficie, borde fino y sin sombra
-/// (diseño plano y minimalista). Se adapta al modo claro y oscuro.
 class AppCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry padding;

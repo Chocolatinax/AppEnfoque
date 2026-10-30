@@ -7,10 +7,6 @@ import '../widgets/common/app_card.dart';
 import '../utils/plural.dart';
 import '../widgets/common/enfoque_app_bar.dart';
 
-/// Historial semanal construido con las sesiones guardadas en SQLite.
-///
-/// Muestra solo el progreso propio del usuario (los gráficos comparativos entre
-/// usuarios están fuera de alcance según la ficha del proyecto).
 class HistoryScreen extends StatefulWidget {
   final VoidCallback onOpenSettings;
 
@@ -21,8 +17,8 @@ class HistoryScreen extends StatefulWidget {
 }
 
 class _HistoryScreenState extends State<HistoryScreen> {
-  int _weekOffset = 0; // 0 = esta semana, -1 = la anterior...
-  int? _selectedDay; // 0 = lunes ... 6 = domingo
+  int _weekOffset = 0;
+  int? _selectedDay;
   String _filter = 'Todas';
 
   static const _dayLetters = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
@@ -98,7 +94,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
         padding: const EdgeInsets.fromLTRB(AppSpacing.screen, AppSpacing.sm,
             AppSpacing.screen, AppSpacing.xxl),
         children: [
-          // Selector de semana
           Row(
             children: [
               IconButton(
@@ -125,11 +120,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
             ],
           ),
           const SizedBox(height: AppSpacing.md),
-
           if (week.isEmpty)
             _buildEmptyWeek(p, t)
           else ...[
-            // Métricas principales (3)
             Row(
               children: [
                 Expanded(
@@ -208,7 +201,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   Widget _buildDailyChart(
       List<FocusSession> week, DateTime start, AppPalette p, TextTheme t) {
-    // Minutos de enfoque por día (lunes a domingo)
     final perDay = List<int>.filled(7, 0);
     for (final s in week) {
       final index = DateUtils.dateOnly(s.startedAt).difference(start).inDays;
@@ -234,8 +226,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
         AppCard(
           child: Column(
             children: [
-              // El lector de pantalla lee el resumen en texto en vez de las barras
               Semantics(
+                // TalkBack lee el resumen en vez de las barras
                 label: 'Gráfica de enfoque por día. $summary',
                 excludeSemantics: true,
                 child: SizedBox(

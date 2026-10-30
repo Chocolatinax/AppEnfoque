@@ -10,24 +10,17 @@ import 'blocking_permission_screen.dart';
 
 enum _PermissionChoice { activate, withoutBlocking }
 
-/// Punto único para iniciar una sesión de enfoque desde cualquier pantalla.
-///
-/// Si la tarea bloquea apps y el permiso de Android no está activo, primero
-/// ofrece activarlo (o iniciar sin bloqueo). Devuelve `true` si la sesión empezó.
 Future<bool> launchFocusSession(BuildContext context, Task task,
     {bool replace = false}) async {
   final blocker = AppBlocker.instance;
   final needsBlocking = task.blockDistractions && task.blockedApps.isNotEmpty;
 
-  // ¿Es la primera sesión? (se lee antes de cualquier espera)
+  // leerlo antes del await (no usar context después)
   final isFirstSession = SessionScope.read(context)?.sessions.isEmpty ?? false;
 
-  // Permiso de notificaciones (el sistema solo lo pregunta la primera vez)
   final notifications = NotificationService.instance;
   await notifications.requestPermission();
 
-  // Android: en la PRIMERA sesión se ofrece activar "Alarmas y recordatorios"
-  // para que los avisos lleguen a la hora exacta (luego se puede activar en Ajustes)
   if (isFirstSession &&
       notifications.supportsExactAlarms &&
       !await notifications.canScheduleExact()) {
@@ -59,7 +52,6 @@ Future<bool> launchFocusSession(BuildContext context, Task task,
   }
 
   if (!context.mounted) return false;
-  // Que no se quede un aviso (por ejemplo "Tarea eliminada · Deshacer") encima de la sesión
   ScaffoldMessenger.maybeOf(context)?.clearSnackBars();
   final route =
       MaterialPageRoute<void>(builder: (_) => ActiveSessionScreen(task: task));
@@ -117,7 +109,6 @@ class _PermissionSheet extends StatelessWidget {
   }
 }
 
-/// Explica el permiso de alarmas exactas antes de abrir el ajuste de Android.
 class _ExactAlarmSheet extends StatelessWidget {
   const _ExactAlarmSheet();
 

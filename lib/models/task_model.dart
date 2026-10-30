@@ -1,8 +1,5 @@
 import 'dart:convert';
 
-/// Reglas del modo Pomodoro de Floria (técnica estándar):
-/// 25 min de enfoque + 5 min de descanso por ronda; después de la 4.ª ronda,
-/// un descanso largo de 25 min (la técnica recomienda entre 15 y 30).
 class Pomodoro {
   Pomodoro._();
 
@@ -10,42 +7,34 @@ class Pomodoro {
   static const int shortBreakMinutes = 5;
   static const int longBreakMinutes = 25;
 
-  /// Cada cuántas rondas el descanso pasa a ser largo.
   static const int longBreakEvery = 4;
 
   static const int minRounds = 1;
-  static const int maxRounds = 6; // 6 x 25 = 150 min (dentro del límite de 180)
+  static const int maxRounds = 6;
 
-  /// Duración del descanso que sigue a la ronda [round] (empieza en 1).
-  /// Toda ronda, incluida la última, termina con su descanso.
   static int breakAfterRound(int round) =>
       round % longBreakEvery == 0 ? longBreakMinutes : shortBreakMinutes;
 }
 
-/// Modos de tiempo de una tarea.
 class TimerMode {
   TimerMode._();
   static const String free = 'libre';
   static const String pomodoro = 'pomodoro';
 }
 
-/// Modelo de datos para las tareas de concentración y estudio
 class Task {
   final String id;
   final String title;
   final String goal;
 
-  /// Minutos de enfoque totales (en Pomodoro = rondas x 25).
   final int durationMinutes;
-  final String priority; // 'Alta', 'Media', 'Baja'
-  final String timerMode; // TimerMode.free | TimerMode.pomodoro
-  final int pomodoroRounds; // solo en modo Pomodoro
-  final List<String>
-      tags; // ya no se usa en la interfaz (se conserva por compatibilidad)
+  final String priority;
+  final String timerMode;
+  final int pomodoroRounds;
+  final List<String> tags;
   final bool blockDistractions;
-  final List<String> blockedApps; // nombres visibles ("Instagram")
-  final List<String>
-      blockedPackages; // paquetes de Android ("com.instagram.android"), mismo orden
+  final List<String> blockedApps;
+  final List<String> blockedPackages;
   final bool isDone;
   final DateTime createdAt;
 
@@ -67,12 +56,10 @@ class Task {
 
   bool get isPomodoro => timerMode == TimerMode.pomodoro;
 
-  /// Texto corto para listas: "45 min" o "4 pomodoros · 100 min".
   String get durationLabel => isPomodoro
       ? '$pomodoroRounds ${pomodoroRounds == 1 ? 'pomodoro' : 'pomodoros'} · $durationMinutes min'
       : '$durationMinutes min';
 
-  /// Orden de importancia para listar primero lo más urgente.
   static int priorityRank(String priority) => switch (priority) {
         'Alta' => 0,
         'Media' => 1,
@@ -97,11 +84,6 @@ class Task {
     );
   }
 
-  // ---------- SQLite ----------
-  // SQLite no tiene listas ni booleanos: las listas se guardan como texto JSON
-  // y los booleanos como 0 / 1.
-
-  /// Convierte la tarea en una fila de la tabla `tasks`.
   Map<String, Object?> toDbMap() {
     return {
       'id': id,
@@ -120,7 +102,6 @@ class Task {
     };
   }
 
-  /// Crea una tarea a partir de una fila de la tabla `tasks`.
   factory Task.fromDbMap(Map<String, Object?> row) {
     List<String> decodeList(Object? value) =>
         value is String && value.isNotEmpty
@@ -143,8 +124,6 @@ class Task {
       createdAt: DateTime.parse(row['created_at'] as String),
     );
   }
-
-  // ---------- Mapa genérico (exportar a JSON) ----------
 
   Map<String, dynamic> toMap() {
     return {
@@ -179,7 +158,6 @@ class Task {
   }
 }
 
-/// Modelo para las aplicaciones bloqueadas durante la sesión de estudio
 class BlockedAppItem {
   final String name;
   final String packageName;

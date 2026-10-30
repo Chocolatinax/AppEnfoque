@@ -1,15 +1,6 @@
 import 'package:flutter/material.dart';
 import 'app_colors.dart';
 
-/// Paleta "Salvia Floria" como extensión del tema, con versión clara y oscura.
-///
-/// Uso en las pantallas:
-/// ```dart
-/// final p = context.palette;
-/// Container(color: p.surfaceContainerLowest, child: Text('Hola', style: TextStyle(color: p.onSurface)));
-/// ```
-/// Los nombres son los mismos que en [AppColors], así migrar una pantalla
-/// es cambiar `AppColors.x` por `p.x` (y quitar los `const` que dependan de ellos).
 @immutable
 class AppPalette extends ThemeExtension<AppPalette> {
   final Color primary;
@@ -72,7 +63,6 @@ class AppPalette extends ThemeExtension<AppPalette> {
     required this.cardShadow,
   });
 
-  /// Modo claro: crema cálido + verde salvia.
   static const AppPalette light = AppPalette(
     primary: AppColors.primary,
     onPrimary: AppColors.onPrimary,
@@ -104,8 +94,6 @@ class AppPalette extends ThemeExtension<AppPalette> {
     cardShadow: AppColors.cardShadow,
   );
 
-  /// Modo oscuro: verde bosque casi negro + salvia claro.
-  /// Contrastes verificados: texto 13.5:1, secundario 8.7:1, primario 9.0:1 sobre tarjetas.
   static const AppPalette dark = AppPalette(
     primary: Color(0xFF8FCBA8),
     onPrimary: Color(0xFF0E2A1B),
@@ -142,13 +130,11 @@ class AppPalette extends ThemeExtension<AppPalette> {
 
   @override
   AppPalette lerp(ThemeExtension<AppPalette>? other, double t) {
-    // Cambio directo entre claro y oscuro (sin interpolar cada color).
     if (other is! AppPalette) return this;
     return t < 0.5 ? this : other;
   }
 }
 
-/// Acceso corto: `context.palette.primary`
 extension AppPaletteContext on BuildContext {
   AppPalette get palette =>
       Theme.of(this).extension<AppPalette>() ?? AppPalette.light;

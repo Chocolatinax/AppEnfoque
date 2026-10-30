@@ -1,4 +1,3 @@
-/// Medidas compartidas para mantener un diseño consistente y con aire.
 class AppSpacing {
   AppSpacing._();
 
@@ -9,10 +8,8 @@ class AppSpacing {
   static const double xl = 24;
   static const double xxl = 32;
 
-  /// Margen lateral de las pantallas.
   static const double screen = 20;
 
-  /// Área táctil mínima recomendada (Material / WCAG): 48 x 48 dp.
   static const double minTouchTarget = 48;
 }
 

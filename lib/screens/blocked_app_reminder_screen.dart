@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../services/app_blocker.dart';
 import '../theme/app_palette.dart';
 import '../theme/app_spacing.dart';
+import '../services/analytics_service.dart';
 import '../widgets/common/app_card.dart';
 
 class BlockedAppReminderScreen extends StatefulWidget {
@@ -46,6 +47,7 @@ class _BlockedAppReminderScreenState extends State<BlockedAppReminderScreen> {
       final ms = DateTime.now().difference(event.detectedAt).inMilliseconds;
       debugPrint(
           '[R1] Recordatorio de ${widget.appNameFor(event.packageName)} mostrado en $ms ms (meta: < 2000 ms)');
+      Analytics.log('blocked_app_reminder', {'latency_ms': ms});
       if (mounted && kDebugMode) setState(() => _latencyMs = ms);
     });
   }

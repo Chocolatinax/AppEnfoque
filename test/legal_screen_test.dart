@@ -24,17 +24,19 @@ void main() {
     expect(find.text('Términos de uso'), findsOneWidget);
     expect(find.textContaining('Última actualización'), findsOneWidget);
     expect(find.text('1. Qué es Floria'), findsOneWidget);
-    await tester.scrollUntilVisible(find.text('9. Contacto'), 300);
-    expect(find.text('9. Contacto'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('10. Contacto'), 300);
+    expect(find.text('10. Contacto'), findsOneWidget);
   });
 
-  testWidgets('La privacidad explica que no se envían datos', (tester) async {
+  testWidgets('La privacidad explica los dos modos y los permisos',
+      (tester) async {
     await pump(tester, LegalDocument.privacy);
     expect(find.text('Política de privacidad'), findsOneWidget);
-    expect(
-        find.textContaining('no envía y no vende tus datos'), findsOneWidget);
+    expect(find.textContaining('Sin cuenta, todo se queda en tu teléfono'),
+        findsOneWidget);
     await tester.scrollUntilVisible(
-        find.text('3. Permisos y para qué sirven'), 300);
+        find.textContaining('Accesibilidad (solo Android)'), 300);
+    expect(find.text('5. Permisos y para qué sirven'), findsOneWidget);
     expect(find.textContaining('Accesibilidad (solo Android)'), findsOneWidget);
   });
 

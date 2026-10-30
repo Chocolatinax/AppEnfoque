@@ -31,7 +31,10 @@ App móvil hecha en **Flutter** que ayuda a los estudiantes a sostener sesiones 
 
 Los estudiantes que estudian solos suelen carecer de una rutina sostenida de organización y concentración. Muchos ya probaron técnicas como Pomodoro, pero fallan porque **nada les impide abrir la app que los distrae**.
 
-Floria está pensada para estudiantes de bachillerato y universidad (de 15 a 25 años, aproximadamente) y funciona **100 % sin conexión**: no pide cuenta ni internet, y todos los datos se quedan en el teléfono.
+Floria está pensada para estudiantes de bachillerato y universidad (de 15 a 25 años, aproximadamente) y se puede usar de dos formas:
+
+- **Sin cuenta:** funciona 100 % sin conexión y todos los datos se quedan en el teléfono (SQLite).
+- **Con cuenta de Google:** las tareas y el historial se guardan en Firebase (Firestore) para no perderlos y verlos en otro teléfono. También funciona sin conexión y se sincroniza al volver internet.
 
 ### Flujo principal
 
@@ -77,7 +80,7 @@ Además:
 | :--- | :--- | :--- |
 | **R1.** Si se abre una app bloqueada, aparece un recordatorio en menos de 2 s | Un Servicio de Accesibilidad de Android detecta la app y abre Floria. En modo debug se imprime el tiempo medido: `[R1] Recordatorio de … mostrado en … ms`. | `android/.../BlockerAccessibilityService.kt`, `lib/services/app_blocker.dart`, `lib/screens/blocked_app_reminder_screen.dart` |
 | **R2.** El historial registra si la sesión se completó o se abandonó | Al terminar se guarda la sesión con su estado y su resultado (Sí / En parte / No). | `lib/data/session_repository.dart`, `lib/screens/history_screen.dart` |
-| **R3.** Funciona sin conexión | No hay backend ni llamadas a internet: todo se guarda en SQLite en el teléfono. | `lib/data/app_database.dart` |
+| **R3.** Funciona sin conexión | Sin cuenta, todo se guarda en SQLite. Con cuenta, Firestore guarda una copia en el teléfono y sincroniza al volver internet. | `lib/data/app_database.dart`, `lib/data/firestore_*_repository.dart` |
 | **R4.** Se inicia una sesión en menos de 5 toques desde el inicio | Tareas → ▶ (→ permisos solo la primera vez) = 1–2 toques. | `lib/screens/tasks_screen.dart`, `lib/screens/session_launcher.dart` |
 | **R5.** Si la app se cierra durante una sesión, al reabrirla se ve el tiempo real | El reloj guarda la hora de inicio, las pausas y los descansos saltados, y calcula el tiempo con la hora actual. | `lib/models/session_clock.dart`, tabla `active_session` |
 
@@ -108,6 +111,18 @@ git clone https://github.com/Chocolatinax/AppEnfoque.git
 cd AppEnfoque
 flutter pub get
 ```
+
+### Firebase (inicio de sesión, Firestore y Analytics)
+
+El proyecto de Firebase es **`app-enfoque`** y ya está conectado (`lib/firebase_options.dart`, `android/app/google-services.json`, `ios/Runner/GoogleService-Info.plist`).
+
+- **iPhone:** no hace falta nada más.
+- **Android:** el inicio con Google solo funciona si la huella **SHA-1** de tu computadora está registrada en Firebase. Para obtenerla:
+  ```bash
+  cd android && ./gradlew signingReport && cd ..
+  ```
+  Copia `SHA1` y `SHA-256` de `Variant: debug` y pásaselas a quien administra el proyecto de Firebase (Configuración del proyecto → app de Android → Agregar huella digital).
+- **Reglas de seguridad de Firestore:** están en `firestore.rules` (cada usuario solo puede leer y escribir lo suyo). Para publicarlas: `firebase deploy --only firestore:rules`.
 
 ---
 
@@ -173,7 +188,7 @@ El archivo queda en `build/app/outputs/flutter-apk/app-debug.apk` y se puede ins
 
 1. Conecta el iPhone por cable y toca **Confiar en esta computadora**.
 2. Abre `ios/Runner.xcworkspace` en Xcode (el `.xcworkspace`, no el `.xcodeproj`).
-3. Selecciona **Runner → Signing & Capabilities**, elige tu **Team** (sirve una cuenta de Apple gratuita) y, si da error, cambia el *Bundle Identifier* por uno propio, por ejemplo `com.tunombre.floria`.
+3. Selecciona **Runner → Signing & Capabilities** y elige tu **Team** (sirve una cuenta de Apple gratuita). El identificador de la app es `sv.esen.floria`; si Xcode dice que ya está en uso, agrégale algo al final solo en tu copia (por ejemplo `sv.esen.floria.ali`) y no lo subas a git.
 4. En el iPhone activa **Ajustes → Privacidad y seguridad → Modo desarrollador** y reinícialo si lo pide.
 5. Corre `flutter run` y elige el iPhone.
 6. La primera vez, en el iPhone ve a **Ajustes → General → VPN y gestión de dispositivos** y confía en tu certificado de desarrollador.
@@ -226,6 +241,7 @@ dart format lib   # Da formato al código
 | `test/session_clock_test.dart` | El reloj de la sesión (R5): tiempo real con la app cerrada, pausas y descansos. |
 | `test/notification_plan_test.dart` | Qué avisos se programan y a qué hora. |
 | `test/app_blocking_test.dart` | El catálogo de apps bloqueables y la selección. |
+| `test/firestore_repository_test.dart` | Tareas e historial en Firestore (simulado): guardar, cargar, separar usuarios y subir datos. |
 | `test/legal_screen_test.dart` | Términos y privacidad, con las guías automáticas de accesibilidad (contraste, áreas táctiles y texto al 200 %). |
 
 Las pruebas de base de datos usan `sqflite_common_ffi`, así que corren en la computadora sin emulador.
@@ -248,6 +264,10 @@ AppEnfoque/
 │   │   ├── sqlite_task_repository.dart # Implementación con SQLite
 │   │   ├── session_repository.dart # Contrato del historial, racha y sesión en curso + SessionScope
 │   │   ├── sqlite_session_repository.dart # Implementación con SQLite
+│   │   ├── firestore_task_repository.dart # Implementación con Firestore (con cuenta)
+│   │   ├── firestore_session_repository.dart
+│   │   ├── app_data.dart         # Cambia entre SQLite y Firestore según la cuenta
+│   │   ├── settings_store.dart   # Ajustes guardados (permiso de Analytics)
 │   │   └── blockable_apps.dart   # Catálogo de redes sociales recomendadas para bloquear
 │   ├── services/                 # Conexión con el sistema operativo
 │   │   ├── app_blocker.dart      # Canal hacia el bloqueo de apps en Kotlin
@@ -279,7 +299,7 @@ AppEnfoque/
 │       └── common/               # Componentes compartidos: tarjeta, chip de prioridad, barra, eliminar con deshacer
 ├── android/                      # Proyecto nativo de Android
 │   └── app/src/main/
-│       ├── kotlin/com/example/enfoque_app/
+│       ├── kotlin/sv/esen/floria/
 │       │   ├── MainActivity.kt   # Canal floria/app_blocker y lista de apps instaladas
 │       │   ├── BlockerAccessibilityService.kt # Detecta la app abierta y trae Floria al frente
 │       │   └── BlockerState.kt   # Qué apps están bloqueadas y hasta cuándo
@@ -330,8 +350,12 @@ Servicios (services/) ── MethodChannel ──► Kotlin (bloqueo de apps)
 | `flutter_local_notifications` + `timezone` | Notificaciones locales programadas |
 | `sqflite_common_ffi` | Base de datos en las pruebas |
 | `flutter_launcher_icons` | Ícono de la app |
+| `firebase_auth` | Inicio de sesión con Google (opcional), con el flujo propio de Firebase |
+| `cloud_firestore` | Respaldo de tareas e historial para quien tiene cuenta |
+| `firebase_analytics` | Datos de uso anónimos, solo si el usuario acepta |
+| `fake_cloud_firestore` | Firestore simulado en las pruebas |
 
-**Sin backend:** la app es de uso individual, sin registro y sin sincronización en la nube.
+**Dos modos:** sin cuenta, la app es 100 % local. Con cuenta, `AppData` cambia los repositorios de SQLite por los de Firestore; las pantallas no se enteran porque solo conocen los contratos.
 
 ---
 

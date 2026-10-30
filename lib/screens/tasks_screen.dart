@@ -10,6 +10,7 @@ import '../widgets/common/task_delete.dart';
 import '../widgets/task_form_screen.dart';
 import 'session_launcher.dart';
 import '../data/daily_phrases.dart';
+import '../services/auth_service.dart';
 import 'main_shell.dart';
 
 class TasksScreen extends StatefulWidget {
@@ -86,6 +87,7 @@ class _TasksScreenState extends State<TasksScreen> {
     final t = Theme.of(context).textTheme;
 
     final repo = TaskScope.of(context);
+    final name = AuthScope.of(context)?.currentUser?.firstName;
     final all = repo.tasks;
     final pendingCount = repo.pendingTasks.length;
     final next = repo.nextTask;
@@ -100,7 +102,10 @@ class _TasksScreenState extends State<TasksScreen> {
         padding: const EdgeInsets.fromLTRB(
             AppSpacing.screen, AppSpacing.sm, AppSpacing.screen, 112),
         children: [
-          Text(_greeting, style: t.headlineMedium),
+          Text(
+            name == null ? _greeting : '$_greeting, $name',
+            style: t.headlineMedium,
+          ),
           const SizedBox(height: 2),
           Text(_todayText,
               style: t.bodyMedium!.copyWith(color: p.onSurfaceVariant)),

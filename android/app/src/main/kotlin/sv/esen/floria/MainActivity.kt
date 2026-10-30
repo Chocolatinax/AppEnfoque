@@ -1,4 +1,4 @@
-package com.example.enfoque_app
+package sv.esen.floria
 
 import android.content.ComponentName
 import android.content.Context

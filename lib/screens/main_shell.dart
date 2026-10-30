@@ -7,6 +7,7 @@ import '../widgets/task_form_screen.dart';
 import 'focus_screen.dart';
 import 'history_screen.dart';
 import 'settings_screen.dart';
+import 'account_flow.dart';
 import 'tasks_screen.dart';
 
 class MainShell extends StatefulWidget {
@@ -33,6 +34,11 @@ class _MainShellState extends State<MainShell> {
   void initState() {
     super.initState();
     final resume = widget.resumeSession;
+    if (resume == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) askAnalyticsConsentIfNeeded(context);
+      });
+    }
     if (resume != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;

@@ -12,6 +12,7 @@ import '../theme/app_palette.dart';
 import '../theme/app_spacing.dart';
 import '../utils/ui_feedback.dart';
 import '../widgets/common/app_card.dart';
+import '../services/analytics_service.dart';
 import 'blocked_app_reminder_screen.dart';
 
 class ActiveSessionScreen extends StatefulWidget {
@@ -202,6 +203,7 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen>
       _clock.endPause(now);
     } else {
       _clock.startPause(now);
+      Analytics.log('emergency_pause');
     }
     _persist();
     _tick();
@@ -284,6 +286,10 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen>
     if (!mounted) return;
 
     await _record(SessionStatus.completed, goalResult: result);
+    Analytics.log('session_completed', {
+      'focus_minutes': _clock.focusSeconds(DateTime.now()) ~/ 60,
+      'result': result ?? 'none',
+    });
     if (!mounted) return;
 
     if (result == GoalResult.yes) {
@@ -324,6 +330,9 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen>
     _syncBlocking();
     if (_blockedPackages.isNotEmpty) AppBlocker.instance.stop();
     await _record(SessionStatus.abandoned);
+    Analytics.log('session_abandoned', {
+      'focus_minutes': _clock.focusSeconds(DateTime.now()) ~/ 60,
+    });
     if (!mounted) return;
 
     showAppSnackBar(context, 'Sesión registrada como abandonada',

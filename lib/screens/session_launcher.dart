@@ -6,6 +6,7 @@ import '../services/notification_service.dart';
 import '../theme/app_palette.dart';
 import '../theme/app_spacing.dart';
 import 'active_session_screen.dart';
+import '../services/analytics_service.dart';
 import 'blocking_permission_screen.dart';
 
 enum _PermissionChoice { activate, withoutBlocking }
@@ -53,6 +54,11 @@ Future<bool> launchFocusSession(BuildContext context, Task task,
 
   if (!context.mounted) return false;
   ScaffoldMessenger.maybeOf(context)?.clearSnackBars();
+  Analytics.log('session_started', {
+    'mode': task.timerMode,
+    'rounds': task.pomodoroRounds,
+    'blocked_apps': task.blockDistractions ? task.blockedPackages.length : 0,
+  });
   final route =
       MaterialPageRoute<void>(builder: (_) => ActiveSessionScreen(task: task));
   if (replace) {

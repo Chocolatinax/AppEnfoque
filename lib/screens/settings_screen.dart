@@ -9,6 +9,10 @@ import '../services/notification_service.dart';
 import 'about_screen.dart';
 import 'legal_screen.dart';
 import 'blocking_permission_screen.dart';
+import '../data/app_data.dart';
+import '../services/analytics_service.dart';
+import '../services/auth_service.dart';
+import 'account_flow.dart';
 import 'welcome_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -20,9 +24,12 @@ class SettingsScreen extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('¿Reiniciar tus datos?'),
-        content: const Text(
-          'Se borrarán las tareas, sesiones e historial guardados en este teléfono. '
-          'Esta acción no se puede deshacer.',
+        content: Text(
+          AuthScope.read(context)?.isSignedIn == true
+              ? 'Se borrarán las tareas, sesiones e historial guardados en tu cuenta. '
+                  'Esta acción no se puede deshacer.'
+              : 'Se borrarán las tareas, sesiones e historial guardados en este teléfono. '
+                  'Esta acción no se puede deshacer.',
         ),
         actions: [
           TextButton(
@@ -44,7 +51,7 @@ class SettingsScreen extends StatelessWidget {
     await TaskScope.read(context)?.clearAll();
     if (!context.mounted) return;
 
-    showAppSnackBar(context, 'Datos borrados de este teléfono');
+    showAppSnackBar(context, 'Datos borrados');
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const WelcomeScreen()),
       (route) => false,
@@ -53,8 +60,7 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = context.palette;
-    final t = Theme.of(context).textTheme;
+    final user = AuthScope.of(context)?.currentUser;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Ajustes')),
@@ -62,31 +68,17 @@ class SettingsScreen extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(AppSpacing.screen, AppSpacing.sm,
             AppSpacing.screen, AppSpacing.xxl),
         children: [
-          AppCard(
-            color: p.primaryFixed,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(Icons.smartphone_outlined, color: p.onPrimaryFixed),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Tus datos viven en este teléfono',
-                          style:
-                              t.titleMedium!.copyWith(color: p.onPrimaryFixed)),
-                      const SizedBox(height: 2),
-                      Text(
-                        'Floria funciona sin cuenta y sin internet. Nadie más puede ver tus tareas ni tu historial.',
-                        style: t.bodyMedium!.copyWith(color: p.onPrimaryFixed),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
+          _SettingsGroup(children: [
+            if (user == null)
+              _SettingsTile(
+                icon: Icons.account_circle_outlined,
+                title: 'Iniciar sesión con Google',
+                subtitle: 'Respalda tus tareas y úsalas en otro teléfono',
+                onTap: () => signInWithGoogleFlow(context),
+              )
+            else
+              _AccountTile(user: user),
+          ]),
           const _SectionLabel('Sesiones de enfoque'),
           _SettingsGroup(children: [
             _SettingsTile(
@@ -125,10 +117,13 @@ class SettingsScreen extends StatelessWidget {
             _SettingsTile(
               icon: Icons.delete_outline,
               title: 'Reiniciar datos',
-              subtitle: 'Borra todo lo guardado en este teléfono',
+              subtitle: user == null
+                  ? 'Borra todo lo guardado en este teléfono'
+                  : 'Borra las tareas e historial de tu cuenta',
               destructive: true,
               onTap: () => _confirmReset(context),
             ),
+            const _AnalyticsTile(),
           ]),
           const _SectionLabel('Floria'),
           _SettingsGroup(children: [
@@ -161,6 +156,24 @@ class SettingsScreen extends StatelessWidget {
               ),
             ),
           ]),
+          if (user != null) ...[
+            const SizedBox(height: AppSpacing.xl),
+            _SettingsGroup(children: [
+              _SettingsTile(
+                icon: Icons.logout,
+                title: 'Cerrar sesión',
+                subtitle: 'Tus datos quedan guardados en tu cuenta',
+                onTap: () => signOutFlow(context),
+              ),
+              _SettingsTile(
+                icon: Icons.person_remove_outlined,
+                title: 'Eliminar mi cuenta',
+                subtitle: 'Borra tu cuenta y los datos guardados en ella',
+                destructive: true,
+                onTap: () => deleteAccountFlow(context),
+              ),
+            ]),
+          ],
         ],
       ),
     );
@@ -288,6 +301,58 @@ class _ExactAlarmTileState extends State<_ExactAlarmTile>
           'Desactivado: los avisos pueden llegar unos minutos tarde. Toca para activarlo',
       },
       onTap: _onTap,
+    );
+  }
+}
+
+class _AccountTile extends StatelessWidget {
+  final AppUser user;
+  const _AccountTile({required this.user});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final initial = (user.name?.isNotEmpty ?? false) ? user.name![0] : '?';
+    return ListTile(
+      leading: CircleAvatar(
+        backgroundColor: p.primaryFixed,
+        foregroundImage:
+            user.photoUrl == null ? null : NetworkImage(user.photoUrl!),
+        onForegroundImageError: user.photoUrl == null ? null : (_, __) {},
+        child: Text(initial, style: TextStyle(color: p.onPrimaryFixed)),
+      ),
+      title: Text(user.name ?? 'Tu cuenta',
+          style: const TextStyle(fontWeight: FontWeight.w600)),
+      subtitle:
+          Text(user.email ?? '', style: TextStyle(color: p.onSurfaceVariant)),
+    );
+  }
+}
+
+class _AnalyticsTile extends StatefulWidget {
+  const _AnalyticsTile();
+
+  @override
+  State<_AnalyticsTile> createState() => _AnalyticsTileState();
+}
+
+class _AnalyticsTileState extends State<_AnalyticsTile> {
+  bool _allowed = Analytics.instance.enabled;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    return SwitchListTile(
+      secondary: Icon(Icons.insights_outlined, color: p.onSurfaceVariant),
+      value: _allowed,
+      onChanged: (value) async {
+        setState(() => _allowed = value);
+        await setAnalyticsAllowed(AppDataScope.read(context), value);
+      },
+      title: const Text('Compartir datos de uso anónimos',
+          style: TextStyle(fontWeight: FontWeight.w600)),
+      subtitle: Text('Nunca incluye tus tareas ni las apps que usas',
+          style: TextStyle(color: p.onSurfaceVariant)),
     );
   }
 }

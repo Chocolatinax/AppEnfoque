@@ -18,7 +18,7 @@ class LegalScreen extends StatelessWidget {
 
   const LegalScreen({super.key, required this.document});
 
-  static const String lastUpdated = '25 de octubre de 2026';
+  static const String lastUpdated = '30 de octubre de 2026';
 
   static const String contactEmail = '20245233@esen.edu.sv';
 
@@ -29,12 +29,12 @@ class LegalScreen extends StatelessWidget {
 
   String get _summary => switch (document) {
         LegalDocument.terms =>
-          'Floria es una app gratuita para estudiar con enfoque. Úsala para ti, '
-              'recuerda que tus datos solo existen en tu teléfono y que el bloqueo es una ayuda, '
-              'no un control.',
+          'Floria es una app gratuita para estudiar con enfoque. Puedes usarla sin cuenta, '
+              'con todo en tu teléfono, o con tu cuenta de Google para respaldar tus tareas. '
+              'El bloqueo es una ayuda, no un control.',
         LegalDocument.privacy =>
-          'Floria no recopila, no envía y no vende tus datos. No hay cuenta, anuncios ni '
-              'analíticas. Todo lo que escribes se queda en tu teléfono.',
+          'Floria no vende tus datos ni muestra anuncios. Sin cuenta, todo se queda en tu teléfono. '
+              'Con cuenta, tus tareas e historial se guardan en tu cuenta y solo tú puedes verlos.',
       };
 
   List<_LegalSection> get _sections => switch (document) {
@@ -52,52 +52,65 @@ class LegalScreen extends StatelessWidget {
       'Al usar Floria aceptas estos términos. Si no estás de acuerdo, no uses la app y puedes desinstalarla en cualquier momento.',
     ]),
     _LegalSection('3. Uso de la app', [
-      'Floria es para uso personal. No necesitas crear una cuenta ni conectarte a internet.',
+      'Floria es para uso personal. Puedes usarla sin cuenta y sin internet.',
     ], [
       'Usa la app para organizar tu estudio y tus sesiones de enfoque.',
       'No intentes modificar la app para dañar tu teléfono o el de otras personas.',
     ]),
-    _LegalSection('4. Bloqueo de apps', [
+    _LegalSection('4. Tu cuenta de Google', [
+      'Si inicias sesión con Google, tus tareas e historial se guardan en tu cuenta para que no los pierdas '
+          'y los veas en otro teléfono. Eres responsable de cuidar el acceso a tu cuenta.',
+      'Puedes cerrar sesión o eliminar tu cuenta de Floria cuando quieras en Ajustes → Cuenta.',
+    ]),
+    _LegalSection('5. Bloqueo de apps', [
       'El bloqueo es una ayuda para concentrarte, no un control parental: tú eliges qué apps bloquear '
           'y puedes dejar de usarlo cuando quieras.',
       'Solo está disponible en Android. En iPhone, el resto de la app funciona igual.',
     ]),
-    _LegalSection('5. Tus datos', [
-      'Nosotros no tenemos una copia de tus datos. Si desinstalas la app, reinicias tus datos o pierdes '
-          'el teléfono, no los podremos recuperar.',
+    _LegalSection('6. Tus datos', [
+      'Sin cuenta, nosotros no tenemos una copia de tus datos: si desinstalas la app, reinicias tus datos o '
+          'pierdes el teléfono, no los podremos recuperar.',
       'Para saber qué guarda Floria y para qué usa cada permiso, lee la Política de privacidad.',
     ]),
-    _LegalSection('6. Sin garantías', [
+    _LegalSection('7. Sin garantías', [
       'Floria se ofrece "tal como está". Hacemos lo posible para que funcione bien, pero puede tener '
           'errores. No somos responsables por la pérdida de datos ni por los resultados de tus estudios.',
     ]),
-    _LegalSection('7. Menores de edad', [
+    _LegalSection('8. Menores de edad', [
       'Floria está pensada para estudiantes desde los 15 años. Si eres menor de 18, úsala con el '
           'conocimiento de tu madre, padre o tutor.',
     ]),
-    _LegalSection('8. Cambios', [
+    _LegalSection('9. Cambios', [
       'Podemos actualizar estos términos. Si lo hacemos, cambiará la fecha de "Última actualización".',
     ]),
-    _LegalSection('9. Contacto', [
+    _LegalSection('10. Contacto', [
       'Si tienes dudas, escríbele al equipo de Floria (Grupo 6, ESEN) a $contactEmail.',
     ]),
   ];
 
   static const _privacy = [
-    _LegalSection('1. Lo que se guarda en tu teléfono', [
-      'Floria guarda en tu teléfono solo lo que necesita para funcionar:',
-    ], [
+    _LegalSection('1. Tú eliges dónde se guardan tus datos', [], [
+      'Sin cuenta: todo se guarda solo en tu teléfono y no se envía nada a internet.',
+      'Con tu cuenta de Google: tus tareas e historial se guardan en Firebase (un servicio de Google) '
+          'ligados a tu cuenta, para que no los pierdas y los veas en otro teléfono. Solo tú puedes verlos.',
+      'En los dos casos, la sesión en curso se guarda solo en tu teléfono.',
+    ]),
+    _LegalSection('2. Qué datos se guardan', [], [
       'Tus tareas: título, objetivo, duración, prioridad y las apps que elegiste bloquear.',
       'Tu historial: cuándo hiciste cada sesión, cuánto duró, si la completaste o la abandonaste y si cumpliste tu objetivo.',
-      'La sesión en curso, para retomarla si cierras la app.',
+      'Si inicias sesión: tu nombre, correo y foto de tu cuenta de Google, para mostrarlos en la app.',
     ]),
-    _LegalSection('2. Lo que NO hacemos', [], [
-      'No pedimos nombre, correo ni ningún dato para registrarte: no hay cuentas.',
-      'No enviamos tus datos a internet. En Android, la app ni siquiera tiene permiso para usar internet.',
-      'No usamos anuncios, analíticas ni rastreo.',
+    _LegalSection('3. Datos de uso anónimos', [
+      'Solo si aceptas, Floria envía datos de uso anónimos a Google Analytics, como cuántas sesiones se '
+          'completan o cuánto tarda en aparecer el recordatorio. Nunca incluyen tus tareas, tus objetivos ni las apps que usas.',
+      'Puedes cambiarlo cuando quieras en Ajustes → Compartir datos de uso anónimos.',
+    ]),
+    _LegalSection('4. Lo que NO hacemos', [], [
       'No vendemos ni compartimos tus datos con nadie.',
+      'No usamos anuncios.',
+      'No leemos lo que hay en tu pantalla.',
     ]),
-    _LegalSection('3. Permisos y para qué sirven', [], [
+    _LegalSection('5. Permisos y para qué sirven', [], [
       'Notificaciones: para avisarte que hay una sesión en curso y cuándo termina cada ronda, descanso o sesión.',
       'Accesibilidad (solo Android): para saber qué app abres durante una sesión de enfoque y mostrarte el '
           'recordatorio si es una de las que bloqueaste. Floria solo ve el nombre de la app; no lee lo que hay '
@@ -105,21 +118,25 @@ class LegalScreen extends StatelessWidget {
           'en los ajustes del teléfono.',
       'Lista de apps instaladas (solo Android): para que elijas qué apps bloquear. Solo se guardan las que eliges.',
       'Alarmas exactas e inicio del teléfono (solo Android): para que los avisos lleguen a tiempo, incluso si reinicias el teléfono.',
+      'Internet: solo para iniciar sesión, respaldar tus datos si tienes cuenta y enviar los datos de uso si lo aceptaste.',
     ]),
-    _LegalSection('4. Copias de seguridad del teléfono', [
+    _LegalSection('6. Copias de seguridad del teléfono', [
       'Si tienes activadas las copias de seguridad de tu teléfono (Google o iCloud), el sistema puede incluir '
           'los datos de Floria en ellas. Eso lo controla tu teléfono, no Floria, y lo puedes desactivar en sus ajustes.',
     ]),
-    _LegalSection('5. Cómo borrar tus datos', [
-      'Puedes borrar todo cuando quieras en Ajustes → Reiniciar datos, o desinstalando la app.',
+    _LegalSection('7. Cómo borrar tus datos', [], [
+      'Sin cuenta: Ajustes → Reiniciar datos, o desinstalando la app.',
+      'Con cuenta: Ajustes → Reiniciar datos borra tus tareas e historial de tu cuenta, y '
+          'Ajustes → Eliminar mi cuenta borra tu cuenta de Floria y todo lo guardado en ella.',
     ]),
-    _LegalSection('6. Menores de edad', [
-      'Floria no recopila datos de nadie, tampoco de menores de edad.',
+    _LegalSection('8. Menores de edad', [
+      'Floria no pide más datos de los necesarios, tampoco a menores de edad. Si eres menor de 18, '
+          'usa tu cuenta con el conocimiento de tu madre, padre o tutor.',
     ]),
-    _LegalSection('7. Cambios', [
+    _LegalSection('9. Cambios', [
       'Si cambiamos esta política, cambiará la fecha de "Última actualización".',
     ]),
-    _LegalSection('8. Contacto', [
+    _LegalSection('10. Contacto', [
       'Si tienes dudas sobre tu privacidad, escríbele al equipo de Floria (Grupo 6, ESEN) a $contactEmail.',
     ]),
   ];

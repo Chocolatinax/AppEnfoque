@@ -3,7 +3,7 @@ import 'package:sqflite/sqflite.dart';
 
 class AppDatabase {
   static const String fileName = 'floria.db';
-  static const int version = 4;
+  static const int version = 5;
 
   final Database db;
 
@@ -73,11 +73,18 @@ class AppDatabase {
         skipped_seconds   INTEGER NOT NULL DEFAULT 0
       )
     ''');
+
+    await db.execute('''
+      CREATE TABLE settings (
+        key   TEXT PRIMARY KEY,
+        value TEXT NOT NULL
+      )
+    ''');
   }
 
   static Future<void> _onUpgrade(
       Database db, int oldVersion, int newVersion) async {
-    // v2: pomodoro, v3: paquetes de apps, v4: sesión en curso
+    // v2: pomodoro, v3: paquetes de apps, v4: sesión en curso, v5: ajustes
     if (oldVersion < 2) {
       await db.execute(
           "ALTER TABLE tasks ADD COLUMN timer_mode TEXT NOT NULL DEFAULT 'libre'");
@@ -101,6 +108,14 @@ class AppDatabase {
         pause_started_at  TEXT,
         skipped_seconds   INTEGER NOT NULL DEFAULT 0
       )
+      ''');
+    }
+    if (oldVersion < 5) {
+      await db.execute('''
+        CREATE TABLE settings (
+          key   TEXT PRIMARY KEY,
+          value TEXT NOT NULL
+        )
       ''');
     }
   }

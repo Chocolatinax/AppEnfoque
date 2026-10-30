@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "87677247785",
+    "project_id": "app-enfoque",
+    "storage_bucket": "app-enfoque.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:87677247785:android:993d78549bb06c6f3a1738",
+        "android_client_info": {
+          "package_name": "sv.esen.floria"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "87677247785-8gm7nv9jjb547kjta0ll2s300k6n88cu.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "sv.esen.floria",
+            "certificate_hash": "cfeb315b4a707cc5b6f18c5e7829d02fc917da89"
+          }
+        },
+        {
+          "client_id": "87677247785-kd8t968vqg3aaiu5phqr35ps656e0k8g.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAv36NBDoQK0rXJrtMtDdOfC8adMbv_TH0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "87677247785-kd8t968vqg3aaiu5phqr35ps656e0k8g.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "87677247785-mttks09ds1r8aaduv6p74u72ljtqjdot.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "sv.esen.floria"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

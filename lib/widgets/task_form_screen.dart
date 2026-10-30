@@ -10,6 +10,7 @@ import '../theme/app_palette.dart';
 import '../theme/app_spacing.dart';
 import '../utils/form_validators.dart';
 import '../utils/plural.dart';
+import '../services/analytics_service.dart';
 import '../utils/ui_feedback.dart';
 
 class TaskFormScreen extends StatefulWidget {
@@ -272,6 +273,11 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
       await repo?.update(task);
     } else {
       await repo?.add(task);
+      Analytics.log('task_created', {
+        'priority': task.priority,
+        'mode': task.timerMode,
+        'blocking': task.blockDistractions ? 1 : 0,
+      });
     }
     if (!mounted) return;
 

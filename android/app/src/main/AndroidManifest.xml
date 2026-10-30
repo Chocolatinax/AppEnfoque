@@ -1,5 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Notificaciones de la sesión de enfoque (flutter_local_notifications) -->
+    <!-- Inicio de sesión con Google, Firestore y Analytics -->
+    <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Volver a programar los avisos si el teléfono se reinicia -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
@@ -10,6 +12,10 @@
         android:label="Floria"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+        <!-- Analytics apagado hasta que el usuario acepte -->
+        <meta-data
+            android:name="firebase_analytics_collection_enabled"
+            android:value="false" />
         <activity
             android:name=".MainActivity"
             android:exported="true"

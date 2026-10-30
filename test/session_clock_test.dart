@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:enfoque_app/data/app_database.dart';
-import 'package:enfoque_app/data/session_repository.dart';
 import 'package:enfoque_app/models/session_clock.dart';
+import 'package:enfoque_app/data/sqlite_session_repository.dart';
 import 'package:enfoque_app/models/task_model.dart';
 
 /// Pruebas del reloj de sesión (requerimiento R5: si la app se cierra durante una
@@ -154,7 +154,7 @@ void main() {
     test('Se guarda, se recupera igual y se borra al terminar', () async {
       final db = await AppDatabase.open(
           factory: databaseFactoryFfi, path: inMemoryDatabasePath);
-      final repo = SessionRepository(db);
+      final repo = SqliteSessionRepository(db);
       await repo.load();
       expect(await repo.loadActive(), isNull);
 

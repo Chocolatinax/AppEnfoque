@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:enfoque_app/data/app_database.dart';
 import 'package:enfoque_app/data/task_repository.dart';
+import 'package:enfoque_app/data/sqlite_task_repository.dart';
 import 'package:enfoque_app/models/task_model.dart';
 
 /// Pruebas de persistencia local: usan una base SQLite en memoria
@@ -17,7 +18,7 @@ void main() {
       factory: databaseFactoryFfi,
       path: inMemoryDatabasePath,
     );
-    repo = TaskRepository(database);
+    repo = SqliteTaskRepository(database);
     await repo.load();
   });
 
@@ -39,7 +40,7 @@ void main() {
       await repo.add(buildTask('1', 'Alta', minutes: 45));
 
       // Un repositorio nuevo simula cerrar y volver a abrir la app
-      final reopened = TaskRepository(database);
+      final reopened = SqliteTaskRepository(database);
       await reopened.load();
 
       expect(reopened.tasks, hasLength(1));
@@ -90,7 +91,7 @@ void main() {
 
       await repo.toggleDone('alta');
 
-      final reopened = TaskRepository(database);
+      final reopened = SqliteTaskRepository(database);
       await reopened.load();
       expect(reopened.tasks.last.id, 'alta');
       expect(reopened.tasks.last.isDone, isTrue);
@@ -110,7 +111,7 @@ void main() {
         createdAt: original.createdAt,
       ));
 
-      final reopened = TaskRepository(database);
+      final reopened = SqliteTaskRepository(database);
       await reopened.load();
       expect(reopened.tasks, hasLength(1));
       final saved = reopened.tasks.single;
@@ -130,7 +131,7 @@ void main() {
       expect(repo.tasks, isEmpty);
 
       await repo.add(task); // "Deshacer"
-      final reopened = TaskRepository(database);
+      final reopened = SqliteTaskRepository(database);
       await reopened.load();
       expect(reopened.tasks.single.id, '1');
     });
@@ -141,7 +142,7 @@ void main() {
 
       await repo.clearAll();
 
-      final reopened = TaskRepository(database);
+      final reopened = SqliteTaskRepository(database);
       await reopened.load();
       expect(reopened.tasks, isEmpty);
     });

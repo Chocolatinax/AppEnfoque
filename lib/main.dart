@@ -7,6 +7,8 @@ import 'data/task_repository.dart';
 import 'screens/main_shell.dart';
 import 'services/notification_service.dart';
 import 'screens/welcome_screen.dart';
+import 'data/sqlite_session_repository.dart';
+import 'data/sqlite_task_repository.dart';
 import 'theme/app_theme.dart';
 
 Future<void> main() async {
@@ -18,8 +20,8 @@ Future<void> main() async {
   await NotificationService.instance.init();
 
   final database = await AppDatabase.open();
-  final taskRepository = TaskRepository(database);
-  final sessionRepository = SessionRepository(database);
+  final taskRepository = SqliteTaskRepository(database);
+  final sessionRepository = SqliteSessionRepository(database);
   await Future.wait([taskRepository.load(), sessionRepository.load()]);
 
   ActiveSessionRecord? activeSession = await sessionRepository.loadActive();

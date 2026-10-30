@@ -3,6 +3,7 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:enfoque_app/data/app_database.dart';
 import 'package:enfoque_app/data/session_repository.dart';
 import 'package:enfoque_app/models/focus_session.dart';
+import 'package:enfoque_app/data/sqlite_session_repository.dart';
 import 'package:enfoque_app/models/task_model.dart';
 
 /// Pruebas del historial de sesiones (R2) y de las reglas del Pomodoro.
@@ -15,7 +16,7 @@ void main() {
   setUp(() async {
     database = await AppDatabase.open(
         factory: databaseFactoryFfi, path: inMemoryDatabasePath);
-    repo = SessionRepository(database);
+    repo = SqliteSessionRepository(database);
     await repo.load();
   });
 
@@ -43,7 +44,7 @@ void main() {
       await repo.record(buildSession('2', start.add(const Duration(hours: 2)),
           status: SessionStatus.abandoned, minutes: 10));
 
-      final reopened = SessionRepository(database);
+      final reopened = SqliteSessionRepository(database);
       await reopened.load();
 
       expect(reopened.sessions, hasLength(2));

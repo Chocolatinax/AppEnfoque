@@ -244,8 +244,10 @@ AppEnfoque/
 │   │   └── session_clock.dart    # Reloj de la sesión basado en la hora real (R5)
 │   ├── data/                     # Persistencia local
 │   │   ├── app_database.dart     # Base SQLite floria.db: tablas y migraciones
-│   │   ├── task_repository.dart  # Leer, guardar, editar y eliminar tareas
-│   │   ├── session_repository.dart # Historial, racha y sesión en curso
+│   │   ├── task_repository.dart  # Contrato (clase abstracta) de las tareas + TaskScope
+│   │   ├── sqlite_task_repository.dart # Implementación con SQLite
+│   │   ├── session_repository.dart # Contrato del historial, racha y sesión en curso + SessionScope
+│   │   ├── sqlite_session_repository.dart # Implementación con SQLite
 │   │   └── blockable_apps.dart   # Catálogo de redes sociales recomendadas para bloquear
 │   ├── services/                 # Conexión con el sistema operativo
 │   │   ├── app_blocker.dart      # Canal hacia el bloqueo de apps en Kotlin
@@ -301,7 +303,8 @@ AppEnfoque/
 Pantallas (screens/, widgets/)
       │  leen y escuchan cambios con TaskScope / SessionScope
       ▼
-Repositorios (data/*_repository.dart)  ← ChangeNotifier
+Repositorios: contratos (data/*_repository.dart)
+      │        implementación SQLite (data/sqlite_*_repository.dart)
       │
       ▼
 SQLite (data/app_database.dart)        → floria.db en el teléfono
@@ -310,7 +313,8 @@ Servicios (services/) ── MethodChannel ──► Kotlin (bloqueo de apps)
                       └─ flutter_local_notifications ──► notificaciones del sistema
 ```
 
-- **Repositorios con `ChangeNotifier`:** guardan los datos en memoria y en SQLite al mismo tiempo, y avisan a las pantallas cuando algo cambia.
+- **Repository con contratos:** `TaskRepository` y `SessionRepository` son clases abstractas (qué se puede hacer con los datos). `SqliteTaskRepository` y `SqliteSessionRepository` las implementan con SQLite. Las pantallas solo conocen el contrato, así que se podría agregar otra fuente de datos (por ejemplo, la nube) sin tocarlas.
+- **Estado con `ChangeNotifier`:** los repositorios guardan los datos en memoria y en SQLite al mismo tiempo, y avisan a las pantallas cuando algo cambia.
 - **`InheritedNotifier` (`TaskScope`, `SessionScope`):** reparten los repositorios a toda la app sin paquetes externos. Se usa `.of(context)` para dibujar y `.read(context)` para acciones.
 - **Base de datos `floria.db` (versión 4):** tablas `tasks`, `sessions` y `active_session`, con migraciones para no perder datos al actualizar.
 

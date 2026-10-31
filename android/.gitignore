@@ -12,3 +12,5 @@ GeneratedPluginRegistrant.java
 key.properties
 **/*.keystore
 **/*.jks
+# Llave de prueba compartida (solo para flutter run): sí se sube
+!app/floria-debug.jks

@@ -1,3 +1,5 @@
+import 'package:firebase_auth/firebase_auth.dart' show FirebaseAuthException;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../data/app_data.dart';
 import '../services/analytics_service.dart';
@@ -19,9 +21,15 @@ Future<bool> signInWithGoogleFlow(BuildContext context) async {
     user = await auth.signInWithGoogle();
   } on SignInCanceled {
     return false;
-  } catch (_) {
+  } catch (e) {
+    debugPrint('[Auth] Error al iniciar sesión: $e');
+    final code = e is FirebaseAuthException ? ' (${e.code})' : '';
     if (context.mounted) {
-      showAppSnackBar(context, 'No se pudo iniciar sesión. Revisa tu conexión.',
+      showAppSnackBar(
+          context,
+          kDebugMode
+              ? 'No se pudo iniciar sesión$code'
+              : 'No se pudo iniciar sesión. Revisa tu conexión.',
           isError: true);
     }
     return false;

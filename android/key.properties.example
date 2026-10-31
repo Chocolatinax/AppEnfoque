@@ -1,0 +1,6 @@
+# Copia este archivo como android/key.properties (NO se sube a git) y llena tus datos.
+# El archivo .jks y las contraseñas se comparten solo por un canal privado del equipo.
+storeFile=/Users/TU_USUARIO/floria-keys/floria-release.jks
+storePassword=CONTRASEÑA
+keyAlias=floria
+keyPassword=CONTRASEÑA

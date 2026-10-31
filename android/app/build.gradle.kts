@@ -1,3 +1,6 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     // START: FlutterFire Configuration
@@ -6,6 +9,16 @@ plugins {
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
+
+// Firmas de Android (Firebase solo deja iniciar sesión con Google a apps con firma registrada):
+// - flutter run: llave de prueba compartida en el repo (floria-debug.jks), así funciona
+//   en cualquier computadora sin pasar archivos.
+// - APK final: llave privada de Floria si existe android/key.properties (no se sube a git).
+val keyProperties = Properties().apply {
+    val file = rootProject.file("key.properties")
+    if (file.exists()) load(FileInputStream(file))
+}
+val hasFloriaKey = keyProperties.getProperty("storeFile") != null
 
 android {
     namespace = "sv.esen.floria"
@@ -34,11 +47,30 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        create("floriaDebug") {
+            storeFile = file("floria-debug.jks")
+            storePassword = "floria-debug"
+            keyAlias = "floria-debug"
+            keyPassword = "floria-debug"
+        }
+        if (hasFloriaKey) {
+            create("floria") {
+                storeFile = file(keyProperties.getProperty("storeFile"))
+                storePassword = keyProperties.getProperty("storePassword")
+                keyAlias = keyProperties.getProperty("keyAlias")
+                keyPassword = keyProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
+        debug {
+            signingConfig = signingConfigs.getByName("floriaDebug")
+        }
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = if (hasFloriaKey) signingConfigs.getByName("floria")
+                            else signingConfigs.getByName("floriaDebug")
         }
     }
 }

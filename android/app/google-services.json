@@ -22,6 +22,22 @@
           }
         },
         {
+          "client_id": "87677247785-bl5b3sor9e9bqn79ditht0gf0etrvrp7.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "sv.esen.floria",
+            "certificate_hash": "c8cd16907949a8ba9d3f1c929a02ae322ca2f57f"
+          }
+        },
+        {
+          "client_id": "87677247785-nl55915mepe2hs7kdcmevpmv8qee8pff.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "sv.esen.floria",
+            "certificate_hash": "b0f78264b7d7f58ce95179251d36b141c09762d2"
+          }
+        },
+        {
           "client_id": "87677247785-kd8t968vqg3aaiu5phqr35ps656e0k8g.apps.googleusercontent.com",
           "client_type": 3
         }

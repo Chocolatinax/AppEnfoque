@@ -117,11 +117,8 @@ flutter pub get
 El proyecto de Firebase es **`app-enfoque`** y ya está conectado (`lib/firebase_options.dart`, `android/app/google-services.json`, `ios/Runner/GoogleService-Info.plist`).
 
 - **iPhone:** no hace falta nada más.
-- **Android:** el inicio con Google solo funciona si la huella **SHA-1** de tu computadora está registrada en Firebase. Para obtenerla:
-  ```bash
-  cd android && ./gradlew signingReport && cd ..
-  ```
-  Copia `SHA1` y `SHA-256` de `Variant: debug` y pásaselas a quien administra el proyecto de Firebase (Configuración del proyecto → app de Android → Agregar huella digital).
+- **Android:** no hace falta nada más. `flutter run` firma la app con la llave de prueba compartida del repo (`android/app/floria-debug.jks`), cuya huella ya está registrada en Firebase, así que "Continuar con Google" funciona en cualquier computadora.
+- **APK final:** se firma con la llave privada de Floria, que **no está en el repo**. Quien la tenga crea `android/key.properties` a partir de `android/key.properties.example` y corre `flutter build apk --release`.
 - **Reglas de seguridad de Firestore:** están en `firestore.rules` (cada usuario solo puede leer y escribir lo suyo). Para publicarlas: `firebase deploy --only firestore:rules`.
 
 ---

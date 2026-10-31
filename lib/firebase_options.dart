@@ -62,10 +62,8 @@ class DefaultFirebaseOptions {
     messagingSenderId: '87677247785',
     projectId: 'app-enfoque',
     storageBucket: 'app-enfoque.firebasestorage.app',
-    androidClientId:
-        '87677247785-8gm7nv9jjb547kjta0ll2s300k6n88cu.apps.googleusercontent.com',
-    iosClientId:
-        '87677247785-mttks09ds1r8aaduv6p74u72ljtqjdot.apps.googleusercontent.com',
+    androidClientId: '87677247785-8gm7nv9jjb547kjta0ll2s300k6n88cu.apps.googleusercontent.com',
+    iosClientId: '87677247785-mttks09ds1r8aaduv6p74u72ljtqjdot.apps.googleusercontent.com',
     iosBundleId: 'sv.esen.floria',
   );
 }

@@ -53,3 +53,9 @@ firestore-debug.log
 *.env
 .env*
 **/service-account*.json
+
+# Plataformas fuera del alcance (solo Android e iOS)
+/windows/
+/web/
+/linux/
+/macos/

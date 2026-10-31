@@ -9,7 +9,6 @@ class AppColors {
   static const Color primaryContainer = Color(0xFF2F6B4F);
   static const Color primaryFixed = Color(0xFFDCEBE0);
   static const Color onPrimaryFixed = Color(0xFF1F4A35);
-  static const Color primaryFixedDim = Color(0xFFB5D3BF);
 
   static const Color secondary = Color(0xFF46705A);
   static const Color secondaryContainer = Color(0xFF8DB39A);
@@ -26,7 +25,6 @@ class AppColors {
   static const Color surfaceContainerLow = Color(0xFFF2F1EA);
   static const Color surfaceContainer = Color(0xFFEBEAE1);
   static const Color surfaceContainerHigh = Color(0xFFE3E2D8);
-  static const Color surfaceVariant = Color(0xFFE3E2D8);
 
   static const Color onSurface = Color(0xFF1C2620);
   static const Color onSurfaceVariant = Color(0xFF4E5953);
